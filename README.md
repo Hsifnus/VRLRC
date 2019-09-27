@@ -1,1 +1,1 @@
-# lrc
+# VR LRC
