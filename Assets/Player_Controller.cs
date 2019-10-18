@@ -39,7 +39,7 @@ public class Player_Controller : MonoBehaviour {
 
         if (PlayerTriggerClicked != null)
         {
-            Debug.Log("HandleTriggerClicked");
+            Debug.Log("HandleTriggerClicked w/ callback");
             PlayerTriggerClicked(this, args);
         }
     }
@@ -55,7 +55,7 @@ public class Player_Controller : MonoBehaviour {
 
         if (PlayerTriggerUnclicked != null)
         {
-            Debug.Log("HandleTriggerUnclicked");
+            Debug.Log("HandleTriggerUnclicked w/ callback");
             PlayerTriggerUnclicked(this, args);
         }
     }
