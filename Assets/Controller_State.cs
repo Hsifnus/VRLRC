@@ -10,7 +10,7 @@ public class Controller_State : MonoBehaviour {
     public GameObject controller;
     private Player_Controller _controller;
 
-    HashSet<GameObject> colliders, interactees;
+    HashSet<GameObject> colliders, interactees, toSeparate;
 
     // Use this for initialization
     void Start () {
@@ -19,6 +19,7 @@ public class Controller_State : MonoBehaviour {
         triggerEntered = false;
         colliders = new HashSet<GameObject>();
         interactees = new HashSet<GameObject>();
+        toSeparate = new HashSet<GameObject>();
         _controller.PlayerTriggerClicked += HandleTriggerClicked;
         _controller.PlayerTriggerUnclicked += HandleTriggerUnclicked;
     }
@@ -78,9 +79,22 @@ public class Controller_State : MonoBehaviour {
         {
             foreach (GameObject obj in interactees)
             {
-                force.ApplyForce(obj);
+                if(!force.ApplyForce(obj))
+                {
+                    toSeparate.Add(obj);
+                }
             }
         }
+        foreach (GameObject obj in toSeparate)
+        {
+            interactees.Remove(obj);
+            ObjectState state = obj.GetComponent<ObjectState>();
+            if (state != null)
+            {
+                state.OnTriggerRelease(this.gameObject);
+            }
+        }
+        toSeparate.Clear();
     }
 
 }
