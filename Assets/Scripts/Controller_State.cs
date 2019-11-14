@@ -10,6 +10,9 @@ public class Controller_State : MonoBehaviour {
     public GameObject controller;
     private Player_Controller _controller;
     private LineRenderer lineRenderer;
+    private Color nearLinkColor;
+    private Color farLinkColor = new Color(1.0f, 0.4f, 0.2f);
+    private bool linkWasFar = false;
 
     HashSet<GameObject> colliders, interactees, toSeparate;
 
@@ -24,6 +27,7 @@ public class Controller_State : MonoBehaviour {
         _controller.PlayerTriggerClicked += HandleTriggerClicked;
         _controller.PlayerTriggerUnclicked += HandleTriggerUnclicked;
         lineRenderer = GetComponent<LineRenderer>();
+        nearLinkColor = lineRenderer.material.color;
     }
 
     private void HandleTriggerClicked(object sender, PlayerControllerEventArgs e)
@@ -100,12 +104,28 @@ public class Controller_State : MonoBehaviour {
         List<Vector3> positions = new List<Vector3>();
         positions.Add(gameObject.transform.position);
         lineRenderer.positionCount = 1 + 2 * interactees.Count;
+        bool isFar = false;
         foreach (GameObject obj in interactees)
         {
             positions.Add(obj.transform.position);
             positions.Add(gameObject.transform.position);
+            isFar = isFar || (obj.transform.position - gameObject.transform.position).magnitude >= 1.0f;
         }
         lineRenderer.SetPositions(positions.ToArray());
+        if (isFar != linkWasFar)
+        {
+            linkWasFar = isFar;
+            if (isFar)
+            {
+                lineRenderer.material.SetColor("_Color", farLinkColor);
+                lineRenderer.material.SetColor("_EmissionColor", farLinkColor);
+            }
+            else
+            {
+                lineRenderer.material.SetColor("_Color", nearLinkColor);
+                lineRenderer.material.SetColor("_EmissionColor", nearLinkColor);
+            }
+        }
     }
 
 }

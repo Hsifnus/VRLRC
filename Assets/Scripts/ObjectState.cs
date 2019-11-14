@@ -7,6 +7,9 @@ public class ObjectState : MonoBehaviour {
     enum State { Passive, Active, Interacting };
 
     private State objectState;
+    private Color passiveColor = new Color(1.0f, 1.0f, 1.0f);
+    private Color activeColor = new Color(0.2f, 0.6f, 1.0f);
+    private Color interactingColor = new Color(0.2f, 1.0f, 0.7f);
     bool wasEmpty, wasInteracting;
 
     Renderer rend;
@@ -95,7 +98,7 @@ public class ObjectState : MonoBehaviour {
                 wasInteracting = false;
             }
             wasEmpty = true;
-            rend.material.SetColor("_Color", new Color(1.0f, 1.0f, 1.0f));
+            rend.material.SetColor("_Color", passiveColor);
         }
         else if (interactors.Count == 0 && activators.Count > 0 && (wasEmpty || wasInteracting))
         {
@@ -104,12 +107,12 @@ public class ObjectState : MonoBehaviour {
                 wasInteracting = false;
             }
             wasEmpty = false;
-            rend.material.SetColor("_Color", new Color(0.2f, 0.6f, 1.0f));
+            rend.material.SetColor("_Color", activeColor);
         }
         else if (interactors.Count > 0 && !wasInteracting)
         {
             wasInteracting = true;
-            rend.material.SetColor("_Color", new Color(1.2f, 0.6f, 0.2f));
+            rend.material.SetColor("_Color", interactingColor);
         }
     }
 
