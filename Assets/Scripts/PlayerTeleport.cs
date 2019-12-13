@@ -29,7 +29,6 @@ public class PlayerTeleport : MonoBehaviour
         {
             // Mark player for respawning
             respawnTime = 2.0f;
-            fade.OnStartFade(Color.blue, 1.0f, false);
             gameObject.transform.position -= new Vector3(0.0f, 0.1f, 0.0f);
         }
     }
@@ -44,7 +43,12 @@ public class PlayerTeleport : MonoBehaviour
     {
         if (respawnTime > 0.0f)
         {
+            float lastRespawnTime = respawnTime;
             respawnTime -= Time.deltaTime;
+            if (lastRespawnTime >= 1.5f && respawnTime < 1.5f)
+            {
+                fade.OnStartFade(new Color(0.0f, 0.03f, 0.1f), 1.0f, false);
+            }
             if (respawnTime <= 0.0f)
             {
                 respawnTime = -1.0f;
