@@ -56,7 +56,7 @@ public class ObjectState : MonoBehaviour {
         }
         if (other.gameObject.CompareTag("Water"))
         {
-            respawnTimer = 5.0f;
+            respawnTimer = 2.0f;
         }
     }
 

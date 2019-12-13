@@ -18,9 +18,9 @@ public class PlayerLocomotion : MonoBehaviour {
     private bool moving;
     private List<Vector3> groundedDeltas = new List<Vector3>() {
         new Vector3(0, 0, 0), new Vector3(0.1f, 0, 0),
-        new Vector3(0.075f, 0, 0.075f), new Vector3(0, 0.1f, 0),
+        new Vector3(0.075f, 0, 0.075f), new Vector3(0, 0, 0.1f),
         new Vector3(-0.075f, 0, 0.075f), new Vector3(-0.1f, 0, 0),
-        new Vector3(-0.075f, 0, -0.075f), new Vector3(0, -0.1f, 0),
+        new Vector3(-0.075f, 0, -0.075f), new Vector3(0, 0, -0.1f),
         new Vector3(0.075f, 0, -0.075f) };
 
     // Use this for initialization
