@@ -13,6 +13,8 @@ public class ObjectState : MonoBehaviour {
     private float respawnTimer = -1.0f;
     private Vector3 spawnLocation;
     private Quaternion spawnRotation;
+    private Rigidbody objRigidbody;
+    private float sinkSpeed = 0.3f;
     bool wasEmpty, wasInteracting;
 
     Renderer rend;
@@ -22,6 +24,7 @@ public class ObjectState : MonoBehaviour {
 	void Start () {
         spawnLocation = gameObject.transform.position;
         spawnRotation = gameObject.transform.rotation;
+        objRigidbody = gameObject.GetComponent<Rigidbody>();
         objectState = State.Passive;
         rend = GetComponent<Renderer>();
         activators = new HashSet<GameObject>();
@@ -34,6 +37,8 @@ public class ObjectState : MonoBehaviour {
     {
         gameObject.transform.position = spawnLocation;
         gameObject.transform.rotation = spawnRotation;
+        objRigidbody.angularVelocity = new Vector3();
+        objRigidbody.velocity = new Vector3();
         objectState = State.Passive;
         activators = new HashSet<GameObject>();
         interactors = new HashSet<GameObject>();
@@ -57,6 +62,7 @@ public class ObjectState : MonoBehaviour {
         if (other.gameObject.CompareTag("Water"))
         {
             respawnTimer = 2.0f;
+            gameObject.transform.position -= new Vector3(0, 0.2f, 0);
         }
     }
 
@@ -118,6 +124,11 @@ public class ObjectState : MonoBehaviour {
             {
                 Respawn();
                 respawnTimer = -1.0f;
+                objRigidbody.velocity = new Vector3();
+            } else
+            {
+                objRigidbody.velocity = new Vector3(objRigidbody.velocity.x, -sinkSpeed, objRigidbody.velocity.z);
+                gameObject.transform.position -= new Vector3(0, 0.1f, 0);
             }
         }
         if (interactors.Count == 0 && activators.Count == 0 && (!wasEmpty || wasInteracting))
