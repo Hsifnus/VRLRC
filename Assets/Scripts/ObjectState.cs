@@ -10,6 +10,9 @@ public class ObjectState : MonoBehaviour {
     private Color passiveColor = new Color(1.0f, 1.0f, 1.0f);
     private Color activeColor = new Color(0.2f, 0.6f, 1.0f);
     private Color interactingColor = new Color(0.2f, 1.0f, 0.7f);
+    private float respawnTimer = -1.0f;
+    private Vector3 spawnLocation;
+    private Quaternion spawnRotation;
     bool wasEmpty, wasInteracting;
 
     Renderer rend;
@@ -17,6 +20,8 @@ public class ObjectState : MonoBehaviour {
     
 	// Use this for initialization
 	void Start () {
+        spawnLocation = gameObject.transform.position;
+        spawnRotation = gameObject.transform.rotation;
         objectState = State.Passive;
         rend = GetComponent<Renderer>();
         activators = new HashSet<GameObject>();
@@ -24,6 +29,17 @@ public class ObjectState : MonoBehaviour {
         wasEmpty = true;
         wasInteracting = false;
 	}
+
+    private void Respawn()
+    {
+        gameObject.transform.position = spawnLocation;
+        gameObject.transform.rotation = spawnRotation;
+        objectState = State.Passive;
+        activators = new HashSet<GameObject>();
+        interactors = new HashSet<GameObject>();
+        wasEmpty = true;
+        wasInteracting = false;
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -37,6 +53,10 @@ public class ObjectState : MonoBehaviour {
                 objectState = State.Active;
             }
             Debug.Log("Activator count: " + activators.Count);
+        }
+        if (other.gameObject.CompareTag("Water"))
+        {
+            respawnTimer = 5.0f;
         }
     }
 
@@ -91,6 +111,15 @@ public class ObjectState : MonoBehaviour {
 
     private void Update()
     {
+        if (respawnTimer > 0.0f)
+        {
+            respawnTimer -= Time.deltaTime;
+            if (respawnTimer <= 0.0f)
+            {
+                Respawn();
+                respawnTimer = -1.0f;
+            }
+        }
         if (interactors.Count == 0 && activators.Count == 0 && (!wasEmpty || wasInteracting))
         {
             if (wasInteracting)

@@ -16,6 +16,12 @@ public class PlayerLocomotion : MonoBehaviour {
     private Rigidbody markerBody;
     private Collider markerCollider;
     private bool moving;
+    private List<Vector3> groundedDeltas = new List<Vector3>() {
+        new Vector3(0, 0, 0), new Vector3(0.1f, 0, 0),
+        new Vector3(0.075f, 0, 0.075f), new Vector3(0, 0.1f, 0),
+        new Vector3(-0.075f, 0, 0.075f), new Vector3(-0.1f, 0, 0),
+        new Vector3(-0.075f, 0, -0.075f), new Vector3(0, -0.1f, 0),
+        new Vector3(0.075f, 0, -0.075f) };
 
     // Use this for initialization
     void Start () {
@@ -34,7 +40,15 @@ public class PlayerLocomotion : MonoBehaviour {
     }
 
     bool IsGrounded() {
-       return Physics.Raycast(pivot.transform.position, -Vector3.up, markerCollider.bounds.extents.y + 0.1f);
+        Vector3 pos = pivot.transform.position;
+        foreach (Vector3 delta in groundedDeltas)
+        {
+            if (Physics.Raycast(pivot.transform.position + delta, -Vector3.up, markerCollider.bounds.extents.y + 0.1f))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     void Jump(object sender, ClickedEventArgs e)
