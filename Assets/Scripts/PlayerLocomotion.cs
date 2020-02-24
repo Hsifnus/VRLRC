@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Valve.VR.InteractionSystem;
@@ -6,6 +6,7 @@ using Valve.VR.InteractionSystem;
 public class PlayerLocomotion : MonoBehaviour {
 
     public GameObject player;
+    public GameObject head;
     public GameObject eye;
     public GameObject pivot;
     public GameObject controller;
@@ -22,6 +23,8 @@ public class PlayerLocomotion : MonoBehaviour {
         new Vector3(-0.075f, 0, 0.075f), new Vector3(-0.1f, 0, 0),
         new Vector3(-0.075f, 0, -0.075f), new Vector3(0, 0, -0.1f),
         new Vector3(0.075f, 0, -0.075f) };
+    private float deltaX, deltaZ;
+    public float stepSize = 0.05f;
 
     // Use this for initialization
     void Start () {
@@ -37,6 +40,7 @@ public class PlayerLocomotion : MonoBehaviour {
         markerCollider = pivot.GetComponent<BoxCollider>();
         markerBody.freezeRotation = true;
         moving = false;
+        deltaX = deltaZ = 0f;
     }
 
     bool IsGrounded() {
@@ -49,6 +53,11 @@ public class PlayerLocomotion : MonoBehaviour {
             }
         }
         return false;
+    }
+
+    bool CanStep(Vector3 dir)
+    {
+        return !Physics.Raycast(pivot.transform.position + new Vector3(0, markerCollider.bounds.extents.y / 2), dir / dir.magnitude, stepSize);
     }
 
     void Jump(object sender, ClickedEventArgs e)
@@ -95,6 +104,14 @@ public class PlayerLocomotion : MonoBehaviour {
             markerBody.velocity = new Vector3(inputX, markerBody.velocity.y, inputZ);
         }
         Vector3 pivotPos = pivot.transform.position;
-        _playArea.transform.position = new Vector3(pivotPos.x, pivotPos.y - 0.25f, pivotPos.z);
+        Vector3 headToPivot = new Vector3(head.transform.position.x - pivotPos.x, 0, head.transform.position.z - pivotPos.z);
+        if (!moving && headToPivot.magnitude > 2*stepSize && CanStep(headToPivot))
+        {
+            Vector3 step = headToPivot / headToPivot.magnitude * stepSize;
+            deltaX += step.x;
+            deltaZ += step.z;
+            pivot.transform.position += step;
+        }
+        _playArea.transform.position = new Vector3(pivotPos.x - deltaX, pivotPos.y - 0.25f, pivotPos.z - deltaZ);
     }
 }
