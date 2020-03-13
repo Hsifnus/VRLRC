@@ -120,6 +120,9 @@ public class PlayerLocomotion : MonoBehaviour {
                 {
                     controlAzimuth += 180.0f;
                 }
+            } else
+            {
+                controlAzimuth = padInput.y < 0.0f ? 270.0f : 90.0f;
             }
             // Compute true X and Z velocity of player using eye and joystick angles, speed, and pad input magnitude
             float inputX = speed * padMagnitude * Mathf.Cos((controlAzimuth - eyeAzimuth) / radiansToDegrees);
