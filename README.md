@@ -22,4 +22,5 @@ Considering how VR hardware isn't particularly accessible or portable, the physi
 * **Movement** - WASD keys
 * **Object Pickup** - Trigger key (check the `SDK_InputSimulator` component of the `[VRSimulator_CameraRig]` child object of the `VRTK SDK Setup - VR Simulator` global game object key bindings).
 * **Jumping** - Button 1 key (check the `SDK_InputSimulator` component of the `[VRSimulator_CameraRig]` child object of the `VRTK SDK Setup - VR Simulator` global game object key bindings).
+
 It might take a while to understand how the controls work with the VR simulator, and to assist, a helpful list of control hints is displayed as you run the demo.
