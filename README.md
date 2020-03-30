@@ -24,3 +24,14 @@ Considering how VR hardware isn't particularly accessible or portable, the physi
 * **Jumping** - Button 1 key (check the `SDK_InputSimulator` component of the `[VRSimulator_CameraRig]` child object of the `VRTK SDK Setup - VR Simulator` global game object key bindings).
 
 It might take a while to understand how the controls work with the VR simulator, and to assist, a helpful list of control hints is displayed as you run the demo.
+
+### Git Practices
+
+Before you commit changes to the project in Git, follow the below steps:
+* First, make sure you are in the master branch. You can check this by typing in `git status` if using a bash/terminal.
+  * Also make sure you have access to the VRLRC remote, which you can set by typing in `git remote add origin `
+* Create a new branch, which is done in bash/terminal via the `git checkout -n <branch name goes here, but without these brackets>`
+* Add **only** the changes to the Assets folder, which can be done on terminal with `git add Assets/*`
+* Commit the changes on your newly made branch with `git commit -m "choose a descriptive commit message"`
+* Push your branch to this repository `git push origin <branch name>`
+* Make a pull request in this repository, which the website should naturally lead you to if you successfully pushed to the new branch.
