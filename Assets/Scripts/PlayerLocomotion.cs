@@ -59,9 +59,16 @@ public class PlayerLocomotion : MonoBehaviour {
         Vector3 pos = pivot.transform.position;
         foreach (Vector3 delta in groundedDeltas)
         {
-            if (Physics.Raycast(pivot.transform.position + delta, -Vector3.up, markerCollider.bounds.extents.y + 0.1f))
+            Ray ray = new Ray(pivot.transform.position + delta, -Vector3.up);
+            RaycastHit hit;
+            if (Physics.Raycast(ray, out hit, markerCollider.bounds.extents.y + 0.1f))
             {
-                return true;
+                ObjectState state = hit.collider.gameObject.GetComponent<ObjectState>();
+                // Cannot jump off of objects we are interacting with - prevents another infinite jump exploit
+                if (!hit.collider.gameObject.CompareTag("Hand") && (!state || state.getState() != ObjectState.State.Interacting))
+                {
+                    return true;
+                }
             }
         }
         return false;

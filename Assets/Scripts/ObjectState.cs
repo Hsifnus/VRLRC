@@ -7,7 +7,7 @@ public class ObjectState : MonoBehaviour {
     // Passive - No hands are touching or interacting with this object
     // Active - There exists hands making contact with this object, but no hands are interacting
     // Interacting - There exists hands that are interacting with (i.e. pulling on) this object
-    enum State { Passive, Active, Interacting };
+    public enum State { Passive, Active, Interacting };
 
     // Current state of the object
     private State objectState;
@@ -176,4 +176,9 @@ public class ObjectState : MonoBehaviour {
         }
     }
 
+    // Returns the current state of the object
+    public State getState()
+    {
+        return objectState;
+    }
 }
