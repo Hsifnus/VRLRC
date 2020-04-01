@@ -15,6 +15,8 @@ public class PlayerLocomotion : MonoBehaviour {
     // Move and jump speed
     public float speed;
     public float jumpSpeed;
+    // Whether this controller is the left controller or not
+    public bool isLeft = false;
     // SteamVR controller
     private SteamVR_TrackedController _controller;
     // SteamVR play area (this is the Guardian area for Oculus)
@@ -36,12 +38,16 @@ public class PlayerLocomotion : MonoBehaviour {
     private float deltaX, deltaZ;
     // How far pivot should step while adjusting to head position
     public float stepSize = 0.05f;
+    // Yaw angle
+    private float yaw;
 
     // Register movement functions to SteamVR Controller
     void Start () {
-        Debug.Log("Starting!");
         _controller = controller.GetComponent<SteamVR_TrackedController>();
-        _controller.PadClicked += Jump;
+        if (!isLeft)
+        {
+            _controller.PadClicked += Jump;
+        }
         _controller.PadTouched += Move;
         _controller.PadUntouched += Stop;
         _playArea = player.GetComponent<SteamVR_PlayArea>();
@@ -52,6 +58,7 @@ public class PlayerLocomotion : MonoBehaviour {
         markerBody.freezeRotation = true;
         moving = false;
         deltaX = deltaZ = 0f;
+        yaw = 0f;
     }
 
     // Does raycast check from a circle of testpoints near the pivot center to see if pivot is grounded
@@ -64,7 +71,7 @@ public class PlayerLocomotion : MonoBehaviour {
             if (Physics.Raycast(ray, out hit, markerCollider.bounds.extents.y + 0.1f))
             {
                 ObjectState state = hit.collider.gameObject.GetComponent<ObjectState>();
-                // Cannot jump off of objects we are interacting with - prevents another infinite jump exploit
+                // Cannot jump off of hands or objects we are pulling - prevents infinite jump exploit
                 if (!hit.collider.gameObject.CompareTag("Hand") && (!state || state.getState() != ObjectState.State.Interacting))
                 {
                     return true;
@@ -83,7 +90,6 @@ public class PlayerLocomotion : MonoBehaviour {
     // Makes the player jump
     void Jump(object sender, ClickedEventArgs e)
     {
-        Debug.Log("Jumping!");
         if (IsGrounded())
         {
             markerBody.velocity = new Vector3(markerBody.velocity.x, jumpSpeed, markerBody.velocity.z);
@@ -93,7 +99,6 @@ public class PlayerLocomotion : MonoBehaviour {
     // Lets the player start moving via controller input
     void Move(object sender, ClickedEventArgs e)
     {
-        Debug.Log("Moving!");
         moving = true;
     }
 
@@ -111,42 +116,59 @@ public class PlayerLocomotion : MonoBehaviour {
         {
             // Get joystick pad input
             Valve.VR.VRControllerAxis_t padInput = _controller.controllerState.rAxis0;
-            // XZ plane orientation of camera
-            float eyeAzimuth = eye.transform.rotation.eulerAngles.y;
-            // Magnitude of pad input
-            float padMagnitude = Mathf.Sqrt(padInput.x * padInput.x + padInput.y * padInput.y);
-            // Joystick orientation
-            float controlAzimuth = 0.0f;
-            // Radians-to-degrees conversion factor
-            float radiansToDegrees = 360.0f / (2.0f * Mathf.PI);
-            // Computes degree orientation of joystick from pad inputs
-            if (padInput.x != 0.0f)
+            // Right controller handles translation
+            if (!isLeft)
             {
-                controlAzimuth = Mathf.Atan(padInput.y / padInput.x) * radiansToDegrees;
-                if (padInput.x < 0.0f) // Atan has limited codomain, so we expand that to full angle
+                // XZ plane orientation of camera
+                float eyeAzimuth = eye.transform.rotation.eulerAngles.y;
+                // Magnitude of pad input
+                float padMagnitude = Mathf.Sqrt(padInput.x * padInput.x + padInput.y * padInput.y);
+                // Joystick orientation
+                float controlAzimuth = 0.0f;
+                // Radians-to-degrees conversion factor
+                float radiansToDegrees = 360.0f / (2.0f * Mathf.PI);
+                // Computes degree orientation of joystick from pad inputs
+                if (padInput.x != 0.0f)
                 {
-                    controlAzimuth += 180.0f;
+                    controlAzimuth = Mathf.Atan(padInput.y / padInput.x) * radiansToDegrees;
+                    if (padInput.x < 0.0f) // Atan has limited codomain, so we expand that to full angle
+                    {
+                        controlAzimuth += 180.0f;
+                    }
                 }
-            } else
+                else
+                {
+                    controlAzimuth = padInput.y < 0.0f ? 270.0f : 90.0f;
+                }
+                // Compute true X and Z velocity of player using eye and joystick angles, speed, and pad input magnitude
+                float inputX = speed * padMagnitude * Mathf.Cos((controlAzimuth - eyeAzimuth) / radiansToDegrees);
+                float inputZ = speed * padMagnitude * Mathf.Sin((controlAzimuth - eyeAzimuth) / radiansToDegrees);
+                markerBody.velocity = new Vector3(inputX, markerBody.velocity.y, inputZ);
+            } else // Left controller handles rotation
             {
-                controlAzimuth = padInput.y < 0.0f ? 270.0f : 90.0f;
+                // Compute yaw for rotation
+                yaw += speed * padInput.x / 7200;
+                markerBody.MoveRotation(new Quaternion(0, Mathf.Sin(yaw), 0, Mathf.Cos(yaw)));
             }
-            // Compute true X and Z velocity of player using eye and joystick angles, speed, and pad input magnitude
-            float inputX = speed * padMagnitude * Mathf.Cos((controlAzimuth - eyeAzimuth) / radiansToDegrees);
-            float inputZ = speed * padMagnitude * Mathf.Sin((controlAzimuth - eyeAzimuth) / radiansToDegrees);
-            markerBody.velocity = new Vector3(inputX, markerBody.velocity.y, inputZ);
         }
-        // 2. Use head-pivot displacement along XZ plane to sync pivot to be under head position
-        Vector3 pivotPos = pivot.transform.position;
-        Vector3 headToPivot = new Vector3(head.transform.position.x - pivotPos.x, 0, head.transform.position.z - pivotPos.z);
-        if (headToPivot.magnitude > 2*stepSize && CanStep(headToPivot))
+        if (!isLeft)
         {
-            Vector3 step = headToPivot / headToPivot.magnitude * stepSize;
-            deltaX += step.x;
-            deltaZ += step.z;
-            pivot.transform.position += step;
+            // 2. Use head-pivot displacement along XZ plane to sync pivot to be under head position
+            Vector3 pivotPos = pivot.transform.position;
+            Vector3 headToPivot = new Vector3(head.transform.position.x - pivotPos.x, 0, head.transform.position.z - pivotPos.z);
+            if (headToPivot.magnitude > 2 * stepSize && CanStep(headToPivot))
+            {
+                Vector3 step = headToPivot / headToPivot.magnitude * stepSize;
+                deltaX += step.x;
+                deltaZ += step.z;
+                pivot.transform.position += step;
+                pivotPos = pivot.transform.position;
+            }
+            // 3. Bind the play are position to that of the pivot, with an offset
+            _playArea.transform.position = new Vector3(pivotPos.x - deltaX, pivotPos.y - 0.25f, pivotPos.z - deltaZ);
+        } else
+        {
+            _playArea.transform.rotation = pivot.transform.rotation;
         }
-        // 3. Bind the play are position to that of the pivot, with an offset
-        _playArea.transform.position = new Vector3(pivotPos.x - deltaX, pivotPos.y - 0.25f, pivotPos.z - deltaZ);
     }
 }
