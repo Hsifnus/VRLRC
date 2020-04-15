@@ -4,7 +4,7 @@ using UnityEngine;
 using Valve.VR.InteractionSystem;
 
 // Updates controller state in response to controller inputs
-public class Controller_State : MonoBehaviour {
+public class Controller_State_Client : MonoBehaviour {
 
     // Is controller trigger being held?
     public bool triggerHeld;
@@ -24,6 +24,8 @@ public class Controller_State : MonoBehaviour {
     private bool linkWasFar = false;
     // Object manager index
     private int objectIdx;
+    // Photon view
+    private PhotonView photonView;
     
     // Colliders are objects that are currently colliding with this hand
     // Interactees are objects this hand is pulling
@@ -33,6 +35,7 @@ public class Controller_State : MonoBehaviour {
     // Initialize private parameters
     void Start () {
         objectIdx = -1;
+        photonView = PhotonView.Get(this);
         _controller = controller.GetComponent<Player_Controller>();
         triggerHeld = false;
         triggerEntered = false;
@@ -56,7 +59,7 @@ public class Controller_State : MonoBehaviour {
             if (state != null)
             {
                 interactees.Add(obj);
-                state.OnTriggerPress(this.gameObject);
+                photonView.RPC("RelayOnTriggerPress", PhotonTargets.All, objectIdx, state.GetObjectIndex());
             }
         }
     }
@@ -72,11 +75,7 @@ public class Controller_State : MonoBehaviour {
             ObjectState state = obj.GetComponent<ObjectState>();
             if (state != null)
             {
-                state.OnTriggerRelease(this.gameObject);
-                if (force != null)
-                {
-                    force.ApplyThrowForce(obj);
-                }
+                photonView.RPC("RelayOnTriggerRelease", PhotonTargets.All, objectIdx, state.GetObjectIndex());
             }
         }
         interactees.Clear();
@@ -157,4 +156,28 @@ public class Controller_State : MonoBehaviour {
         objectIdx = idx;
     }
 
+    // Removes a set of interactees from the controller
+    [PunRPC]
+    public void RemoveInteractee(int ctrl, int[] objs)
+    {
+        if (objectIdx == ctrl)
+        {
+            int i = 0;
+            int j = 0;
+            foreach (GameObject interactee in interactees)
+            {
+                if (objs[j] == i)
+                {
+                    toSeparate.Add(interactee);
+                    j++;
+                }
+                i++;
+            }
+        }
+        foreach (GameObject target in toSeparate)
+        {
+            interactees.Remove(target);
+        }
+        toSeparate.Clear();
+    }
 }

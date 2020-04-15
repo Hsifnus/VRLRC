@@ -11,6 +11,8 @@ public class ObjectState : MonoBehaviour {
 
     // Current state of the object
     private State objectState;
+    // Object manager index
+    private int objectIdx;
     // Color constants for each of the three possible states
     private Color passiveColor = new Color(1.0f, 1.0f, 1.0f);
     private Color activeColor = new Color(0.2f, 0.6f, 1.0f);
@@ -32,9 +34,10 @@ public class ObjectState : MonoBehaviour {
     // Activators are hands that are in contact with the object
     // Interactors are hands that are interacting with the object
     HashSet<GameObject> activators, interactors;
-    
+
     // Initialize private parameters
-    void Start () {
+    void Start() {
+        objectIdx = -1;
         spawnLocation = gameObject.transform.position;
         spawnRotation = gameObject.transform.rotation;
         objRigidbody = gameObject.GetComponent<Rigidbody>();
@@ -135,7 +138,7 @@ public class ObjectState : MonoBehaviour {
 
     private void Update()
     {
-	// 1. Sink then respawn object with a delay if it fell into water
+        // 1. Sink then respawn object with a delay if it fell into water
         if (respawnTimer > 0.0f)
         {
             respawnTimer -= Time.deltaTime;
@@ -150,7 +153,7 @@ public class ObjectState : MonoBehaviour {
                 gameObject.transform.position -= new Vector3(0, 0.1f, 0);
             }
         }
-	// 2. Update object color depending on current object state
+        // 2. Update object color depending on current object state
         if (interactors.Count == 0 && activators.Count == 0 && (!wasEmpty || wasInteracting))
         {
             if (wasInteracting)
@@ -180,5 +183,23 @@ public class ObjectState : MonoBehaviour {
     public State getState()
     {
         return objectState;
+    }
+
+    // Returns the current interactors of the object
+    public HashSet<GameObject> GetInteractors()
+    {
+        return interactors;
+    }
+
+    // Sets the object index of the object
+    public void SetObjectIndex(int idx)
+    {
+        objectIdx = idx;
+    }
+
+    // Gets the object index of the object
+    public int GetObjectIndex()
+    {
+        return objectIdx;
     }
 }
