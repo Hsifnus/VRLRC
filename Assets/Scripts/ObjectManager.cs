@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ObjectManager : MonoBehaviour
+public class ObjectManager : Photon.PunBehaviour
 {
     private GameObject[] throwableObjs;
     private ObjectState[] throwables;
@@ -10,21 +10,50 @@ public class ObjectManager : MonoBehaviour
     private Hashtable playerForceCache;
     private Hashtable controllerIndexMap;
     private List<int>[] toSeparate;
-    // Photon view
-    private PhotonView photonView;
+    private string gameVersion = "0.1";
 
-    void OnJoinedRoom()
+    void Awake()
     {
-        photonView = PhotonView.Get(this);
+        PhotonNetwork.autoJoinLobby = true;
+        PhotonNetwork.automaticallySyncScene = true;
+    }
+
+    void Start()
+    {
+        if (!PhotonNetwork.connected)
+        {
+            PhotonNetwork.ConnectUsingSettings(gameVersion);
+        }
+    }
+
+    public override void OnJoinedLobby()
+    {
+        Debug.Log("OnJoinedLobby");
+        PhotonNetwork.JoinOrCreateRoom("Room", new RoomOptions() { MaxPlayers = 2 }, TypedLobby.Default);
+    }
+
+    public override void OnJoinedRoom()
+    {
+        Debug.Log("OnJoinedRoom");
+
+        PhotonNetwork.Instantiate("PlayerPrefab", new Vector3(1, 2, 2), Quaternion.identity, 0);
         throwableObjs = GameObject.FindGameObjectsWithTag("Throwable");
         throwables = new ObjectState[throwableObjs.Length];
         for (int i = 0; i < throwables.Length; i++)
         {
+            // Add PhotonTransformView
+            PhotonView pv = throwableObjs[i].AddComponent<PhotonView>();
+            PhotonTransformView ptv = throwableObjs[i].AddComponent<PhotonTransformView>();
+            ptv.m_PositionModel.SynchronizeEnabled = true;
+            ptv.m_RotationModel.SynchronizeEnabled = true;
+            pv.ObservedComponents = new List<Component>();
+            pv.ObservedComponents.Add(ptv);
+            // Modify ObjectStates
             throwables[i] = throwableObjs[i].GetComponent<ObjectState>();
             throwables[i].SetObjectIndex(i);
         }
         
-        controllers = GameObject.FindGameObjectsWithTag("GameController");
+        controllers = GameObject.FindGameObjectsWithTag("Hand");
         controllerIndexMap = new Hashtable();
         toSeparate = new List<int>[controllers.Length];
         for (int i = 0; i < controllers.Length; i++)
@@ -41,6 +70,31 @@ public class ObjectManager : MonoBehaviour
         }
 
         playerForceCache = new Hashtable();
+    }
+
+    private void RefreshControllers()
+    {
+        controllers = GameObject.FindGameObjectsWithTag("Hand");
+        controllerIndexMap = new Hashtable();
+        toSeparate = new List<int>[controllers.Length];
+        for (int i = 0; i < controllers.Length; i++)
+        {
+            Controller_State_Client client = controllers[i].GetComponent<Controller_State_Client>();
+            PhotonView targetView = client.photonView;
+            targetView.RPC("SetObjectIndex", PhotonTargets.All, i);
+            controllerIndexMap.Add(controllers[i], i);
+            toSeparate[i] = new List<int>();
+        }
+    }
+
+    public override void OnPhotonPlayerConnected(PhotonPlayer newPlayer)
+    {
+        RefreshControllers();
+    }
+
+    public override void OnPhotonPlayerDisconnected(PhotonPlayer newPlayer)
+    {
+        RefreshControllers();
     }
 
     private PlayerForce GetPlayerForce(GameObject hand)
@@ -61,6 +115,7 @@ public class ObjectManager : MonoBehaviour
     [PunRPC]
     void RelayOnTriggerPress(int ctrl, int obj)
     {
+        Debug.Log("RelayOnTriggerPress: " + ctrl + ", " + obj);
         if (PhotonNetwork.isMasterClient == false)
         {
             return;
@@ -109,7 +164,13 @@ public class ObjectManager : MonoBehaviour
             {
                 if (toSeparate[j].Count > 0)
                 {
-                    photonView.RPC("ControllerRemoveInteractee", PhotonTargets.All, j, toSeparate[j].ToArray());
+                    PhotonView targetView = controllers[j].GetComponent<PhotonView>();
+                    int[] sepVals = toSeparate[j].ToArray();
+                    targetView.RPC("RemoveInteractee", PhotonTargets.All, j, sepVals);
+                    for (int k = 0; k < sepVals.Length; k++)
+                    {
+                        throwables[sepVals[k]].OnTriggerRelease(controllers[j]);
+                    }
                     toSeparate[j].Clear();
                 }
             }

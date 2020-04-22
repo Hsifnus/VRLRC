@@ -144,7 +144,8 @@ public class PlayerLocomotion : MonoBehaviour {
                 float inputX = speed * padMagnitude * Mathf.Cos((controlAzimuth - eyeAzimuth) / radiansToDegrees);
                 float inputZ = speed * padMagnitude * Mathf.Sin((controlAzimuth - eyeAzimuth) / radiansToDegrees);
                 markerBody.velocity = new Vector3(inputX, markerBody.velocity.y, inputZ);
-            } else // Left controller handles rotation
+            }
+            else // Left controller handles rotation
             {
                 // Compute yaw for rotation
                 yaw += speed * padInput.x / 7200;
@@ -166,7 +167,8 @@ public class PlayerLocomotion : MonoBehaviour {
             }
             // 3. Bind the play are position to that of the pivot, with an offset
             _playArea.transform.position = new Vector3(pivotPos.x - deltaX, pivotPos.y - 0.25f, pivotPos.z - deltaZ);
-        } else
+        }
+        else
         {
             _playArea.transform.rotation = pivot.transform.rotation;
         }

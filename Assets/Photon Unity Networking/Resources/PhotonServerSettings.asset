@@ -43,4 +43,7 @@ MonoBehaviour:
   - RequestForPickupItems
   - RequestForPickupTimes
   - TaggedPlayer
+  - RelayOnTriggerPress
+  - RelayOnTriggerRelease
+  - RemoveInteractee
   DisableAutoOpenWizard: 1

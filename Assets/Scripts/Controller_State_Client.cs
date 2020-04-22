@@ -4,7 +4,7 @@ using UnityEngine;
 using Valve.VR.InteractionSystem;
 
 // Updates controller state in response to controller inputs
-public class Controller_State_Client : MonoBehaviour {
+public class Controller_State_Client : Photon.PunBehaviour {
 
     // Is controller trigger being held?
     public bool triggerHeld;
@@ -13,7 +13,7 @@ public class Controller_State_Client : MonoBehaviour {
     // The game object containing the Player_Controller script
     public GameObject controller;
     // The interface between the game and the SteamVR controller
-    private Player_Controller _controller;
+    private Player_Controller_Client _controller;
     // Renders object-hand links
     private LineRenderer lineRenderer;
     // Color of non-stretched links
@@ -24,8 +24,6 @@ public class Controller_State_Client : MonoBehaviour {
     private bool linkWasFar = false;
     // Object manager index
     private int objectIdx;
-    // Photon view
-    private PhotonView photonView;
     
     // Colliders are objects that are currently colliding with this hand
     // Interactees are objects this hand is pulling
@@ -34,9 +32,7 @@ public class Controller_State_Client : MonoBehaviour {
 
     // Initialize private parameters
     void Start () {
-        objectIdx = -1;
-        photonView = PhotonView.Get(this);
-        _controller = controller.GetComponent<Player_Controller>();
+        _controller = controller.GetComponent<Player_Controller_Client>();
         triggerHeld = false;
         triggerEntered = false;
         colliders = new HashSet<GameObject>();
@@ -51,7 +47,7 @@ public class Controller_State_Client : MonoBehaviour {
     // Callback used by Player_Controller to bind clicking the trigger to adding interactees
     private void HandleTriggerClicked(object sender, PlayerControllerEventArgs e)
     {
-        Debug.Log("Trigger Clicked");
+        Debug.Log("Trigger Clicked: " + objectIdx);
         triggerHeld = true;
         foreach (GameObject obj in colliders)
         {
@@ -59,7 +55,8 @@ public class Controller_State_Client : MonoBehaviour {
             if (state != null)
             {
                 interactees.Add(obj);
-                photonView.RPC("RelayOnTriggerPress", PhotonTargets.All, objectIdx, state.GetObjectIndex());
+                PhotonView targetView = GameObject.FindGameObjectsWithTag("Manager")[0].GetComponent<PhotonView>();
+                targetView.RPC("RelayOnTriggerPress", PhotonTargets.All, objectIdx, state.GetObjectIndex());
             }
         }
     }
@@ -75,7 +72,8 @@ public class Controller_State_Client : MonoBehaviour {
             ObjectState state = obj.GetComponent<ObjectState>();
             if (state != null)
             {
-                photonView.RPC("RelayOnTriggerRelease", PhotonTargets.All, objectIdx, state.GetObjectIndex());
+                PhotonView targetView = GameObject.FindGameObjectsWithTag("Manager")[0].GetComponent<PhotonView>();
+                targetView.RPC("RelayOnTriggerRelease", PhotonTargets.All, objectIdx, state.GetObjectIndex());
             }
         }
         interactees.Clear();
@@ -98,29 +96,6 @@ public class Controller_State_Client : MonoBehaviour {
     
     private void LateUpdate()
     {
-        // 1. Apply pull force to interactees
-        PlayerForce force = GetComponent<PlayerForce>();
-        if (force != null)
-        {
-            foreach (GameObject obj in interactees)
-            {
-                if(!force.ApplyForce(obj))
-                {
-                    toSeparate.Add(obj);
-                }
-            }
-        }
-        // 2. Release any interactees marked for separation
-        foreach (GameObject obj in toSeparate)
-        {
-            interactees.Remove(obj);
-            ObjectState state = obj.GetComponent<ObjectState>();
-            if (state != null)
-            {
-                state.OnTriggerRelease(this.gameObject);
-            }
-        }
-        toSeparate.Clear();
         // 3. Use interactee positions to compute object-hand link endpoints
         List<Vector3> positions = new List<Vector3>();
         positions.Add(gameObject.transform.position);
@@ -151,9 +126,11 @@ public class Controller_State_Client : MonoBehaviour {
     }
     
     // Sets the object index of the controller
+    [PunRPC]
     public void SetObjectIndex(int idx)
     {
         objectIdx = idx;
+        Debug.Log("SetObjectIndex: " + objectIdx);
     }
 
     // Removes a set of interactees from the controller
