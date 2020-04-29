@@ -1,8 +1,9 @@
 ﻿using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ObjectState : MonoBehaviour {
+public class ObjectState : Photon.PunBehaviour {
 
     // Passive - No hands are touching or interacting with this object
     // Active - There exists hands making contact with this object, but no hands are interacting
@@ -34,6 +35,8 @@ public class ObjectState : MonoBehaviour {
     // Activators are hands that are in contact with the object
     // Interactors are hands that are interacting with the object
     HashSet<GameObject> activators, interactors;
+    // Object Manager
+    ObjectManager manager;
 
     // Initialize private parameters
     void Start() {
@@ -47,6 +50,7 @@ public class ObjectState : MonoBehaviour {
         interactors = new HashSet<GameObject>();
         wasEmpty = true;
         wasInteracting = false;
+        manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<ObjectManager>();
     }
 
     // Respawns the object at its spawn point, resetting internal state in the process
@@ -71,9 +75,13 @@ public class ObjectState : MonoBehaviour {
         if (other.gameObject.CompareTag("Hand"))
         {
             activators.Add(other.gameObject);
+            photonView.RPC("UpdateChangeLinks", PhotonTargets.All,
+                other.gameObject.GetComponent<Controller_State_Client>().GetObjectIndex(),
+                false, false);
             if (objectState != State.Active && interactors.Count == 0)
             {
                 objectState = State.Active;
+                CallUpdateObjectState(true);
             }
             Debug.Log("Activator count: " + activators.Count);
         }
@@ -92,9 +100,13 @@ public class ObjectState : MonoBehaviour {
         if (other.gameObject.CompareTag("Hand"))
         {
             activators.Remove(other.gameObject);
+            photonView.RPC("UpdateChangeLinks", PhotonTargets.All,
+                other.gameObject.GetComponent<Controller_State_Client>().GetObjectIndex(),
+                false, true);
             if (activators.Count == 0 && interactors.Count == 0)
             {
                 objectState = State.Passive;
+                CallUpdateObjectState(true);
             }
             Debug.Log("Activator count: " + activators.Count);
         }
@@ -109,8 +121,12 @@ public class ObjectState : MonoBehaviour {
             if (objectState == State.Active)
             {
                 objectState = State.Interacting;
+                CallUpdateObjectState(false);
             }
             interactors.Add(controller);
+            photonView.RPC("UpdateChangeLinks", PhotonTargets.All, 
+                controller.GetComponent<Controller_State_Client>().GetObjectIndex(),
+                true, false);
             Debug.Log("Interactor count: " + interactors.Count);
         }
     }
@@ -122,6 +138,9 @@ public class ObjectState : MonoBehaviour {
         if (objectState != State.Passive)
         {
             interactors.Remove(controller);
+            photonView.RPC("UpdateChangeLinks", PhotonTargets.All,
+                controller.GetComponent<Controller_State_Client>().GetObjectIndex(),
+                true, true);
             if (interactors.Count == 0)
             {
                 if (activators.Count == 0)
@@ -131,9 +150,15 @@ public class ObjectState : MonoBehaviour {
                 {
                     objectState = State.Active;
                 }
+                CallUpdateObjectState(false);
             }
             Debug.Log("Interactor count: " + interactors.Count);
         }
+    }
+
+    private void CallUpdateObjectState(bool force)
+    {
+        photonView.RPC("UpdateObjectState", PhotonTargets.All, Convert.ChangeType(objectState, objectState.GetTypeCode()), force);
     }
 
     private void Update()
@@ -201,5 +226,45 @@ public class ObjectState : MonoBehaviour {
     public int GetObjectIndex()
     {
         return objectIdx;
+    }
+
+    // Updates the object state across all clients
+    [PunRPC]
+    public void UpdateObjectState(int state, bool force)
+    {
+        if (force || !PhotonNetwork.isMasterClient)
+        {
+            objectState = (State) state;
+        }
+    }
+
+    // Updates the object state across all clients
+    [PunRPC]
+    public void UpdateChangeLinks(int index, bool interact, bool remove)
+    {
+        if (!PhotonNetwork.isMasterClient)
+        {
+            GameObject hand = manager.GetController(index);
+            if (interact)
+            {
+                if (remove)
+                {
+                    interactors.Remove(hand);
+                } else
+                {
+                    interactors.Add(hand);
+                }
+            } else
+            {
+                if (remove)
+                {
+                    activators.Remove(hand);
+                }
+                else
+                {
+                    activators.Add(hand);
+                }
+            }
+        }
     }
 }

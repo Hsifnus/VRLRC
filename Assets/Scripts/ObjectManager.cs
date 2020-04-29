@@ -39,6 +39,7 @@ public class ObjectManager : Photon.PunBehaviour
         PhotonNetwork.Instantiate("PlayerPrefab", new Vector3(1, 2, 2), Quaternion.identity, 0);
         throwableObjs = GameObject.FindGameObjectsWithTag("Throwable");
         throwables = new ObjectState[throwableObjs.Length];
+        int id = 10000;
         for (int i = 0; i < throwables.Length; i++)
         {
             // Add PhotonTransformView
@@ -48,6 +49,7 @@ public class ObjectManager : Photon.PunBehaviour
             ptv.m_RotationModel.SynchronizeEnabled = true;
             pv.ObservedComponents = new List<Component>();
             pv.ObservedComponents.Add(ptv);
+            pv.viewID = id++;
             // Modify ObjectStates
             throwables[i] = throwableObjs[i].GetComponent<ObjectState>();
             throwables[i].SetObjectIndex(i);
@@ -126,6 +128,7 @@ public class ObjectManager : Photon.PunBehaviour
     [PunRPC]
     void RelayOnTriggerRelease(int ctrl, int obj)
     {
+        Debug.Log("RelayOnTriggerRelease: " + ctrl + ", " + obj);
         if (PhotonNetwork.isMasterClient == false)
         {
             return;
@@ -175,6 +178,11 @@ public class ObjectManager : Photon.PunBehaviour
                 }
             }
         }
+    }
+
+    public GameObject GetController(int index)
+    {
+        return controllers[index];
     }
 
 }

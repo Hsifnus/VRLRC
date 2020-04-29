@@ -22,7 +22,7 @@ MonoBehaviour:
   ServerAddress: 
   ServerPort: 5055
   VoiceServerPort: 5055
-  JoinLobby: 0
+  JoinLobby: 1
   EnableLobbyStatistics: 0
   PunLogging: 0
   NetworkLogging: 1
@@ -46,4 +46,7 @@ MonoBehaviour:
   - RelayOnTriggerPress
   - RelayOnTriggerRelease
   - RemoveInteractee
+  - SetObjectIndex
+  - UpdateObjectState
+  - UpdateChangeLinks
   DisableAutoOpenWizard: 1

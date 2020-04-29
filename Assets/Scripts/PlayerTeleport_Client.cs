@@ -38,7 +38,7 @@ public class PlayerTeleport_Client : Photon.PunBehaviour, IPunCallbacks
     // Start the respawn sequence if player hits water
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Water"))
+        if (photonView.isMine && collision.gameObject.CompareTag("Water"))
         {
             // Mark player for respawning
             respawnTime = 2.0f;

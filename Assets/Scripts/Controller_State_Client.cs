@@ -133,6 +133,12 @@ public class Controller_State_Client : Photon.PunBehaviour {
         Debug.Log("SetObjectIndex: " + objectIdx);
     }
 
+    // Gets the object index of the controller
+    public int GetObjectIndex()
+    {
+        return objectIdx;
+    }
+
     // Removes a set of interactees from the controller
     [PunRPC]
     public void RemoveInteractee(int ctrl, int[] objs)

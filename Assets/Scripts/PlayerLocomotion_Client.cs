@@ -52,7 +52,7 @@ public class PlayerLocomotion_Client : Photon.PunBehaviour, IPunCallbacks {
             eye = controller = GameObject.FindGameObjectsWithTag("BaseControllerRight")[0];
         }
         player = GameObject.FindGameObjectsWithTag("BaseCameraRig")[0];
-        if (PhotonView.Get(this).isMine)
+        if (photonView.isMine)
         {
             _controller = controller.GetComponent<SteamVR_TrackedController>();
             if (!isLeft)
@@ -122,7 +122,7 @@ public class PlayerLocomotion_Client : Photon.PunBehaviour, IPunCallbacks {
     }
 
     void Update () {
-        if (PhotonView.Get(this).isMine)
+        if (photonView.isMine)
         {
             // 1. If moving, set velocity to the direction the controller stick is pointing
             if (moving)
@@ -179,9 +179,12 @@ public class PlayerLocomotion_Client : Photon.PunBehaviour, IPunCallbacks {
                     pivotPos = pivot.transform.position;
                 }
                 // 3. Bind the play are position to that of the pivot, with an offset
-                _playArea.transform.position = new Vector3(pivotPos.x - deltaX, pivotPos.y - 0.25f, pivotPos.z - deltaZ);
+                if (_playArea)
+                {
+                    _playArea.transform.position = new Vector3(pivotPos.x - deltaX, pivotPos.y - 0.25f, pivotPos.z - deltaZ);
+                }
             }
-            else
+            else if (_playArea)
             {
                 _playArea.transform.rotation = pivot.transform.rotation;
             }
