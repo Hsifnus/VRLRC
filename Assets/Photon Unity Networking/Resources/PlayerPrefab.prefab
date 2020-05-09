@@ -855,7 +855,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!65 &5957478766438474117
 BoxCollider:
@@ -913,7 +913,7 @@ MonoBehaviour:
     SynchronizeEnabled: 1
     TeleportEnabled: 1
     TeleportIfDistanceGreaterThan: 3
-    InterpolateOption: 2
+    InterpolateOption: 3
     InterpolateMoveTowardsSpeed: 1
     InterpolateLerpSpeed: 1
     InterpolateMoveTowardsAcceleration: 2
@@ -967,7 +967,7 @@ MonoBehaviour:
     DrawErrorGizmo: 1
   m_RotationModel:
     SynchronizeEnabled: 0
-    InterpolateOption: 1
+    InterpolateOption: 0
     InterpolateRotateTowardsSpeed: 180
     InterpolateLerpSpeed: 5
   m_ScaleModel:

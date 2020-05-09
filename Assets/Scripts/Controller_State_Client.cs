@@ -24,6 +24,8 @@ public class Controller_State_Client : Photon.PunBehaviour {
     private bool linkWasFar = false;
     // Object manager index
     private int objectIdx;
+    // Local object manager
+    private ObjectManager manager;
     
     // Colliders are objects that are currently colliding with this hand
     // Interactees are objects this hand is pulling
@@ -42,6 +44,7 @@ public class Controller_State_Client : Photon.PunBehaviour {
         _controller.PlayerTriggerUnclicked += HandleTriggerUnclicked;
         lineRenderer = GetComponent<LineRenderer>();
         nearLinkColor = lineRenderer.material.color;
+        manager = GameObject.FindGameObjectWithTag("Manager").GetComponent<ObjectManager>();
     }
 
     // Callback used by Player_Controller to bind clicking the trigger to adding interactees
@@ -55,6 +58,7 @@ public class Controller_State_Client : Photon.PunBehaviour {
             if (state != null)
             {
                 interactees.Add(obj);
+                photonView.RPC("UpdateChangeLinks", PhotonTargets.All, state.GetObjectIndex(), false, false, false);
                 PhotonView targetView = GameObject.FindGameObjectsWithTag("Manager")[0].GetComponent<PhotonView>();
                 targetView.RPC("RelayOnTriggerPress", PhotonTargets.All, objectIdx, state.GetObjectIndex());
             }
@@ -72,11 +76,12 @@ public class Controller_State_Client : Photon.PunBehaviour {
             ObjectState state = obj.GetComponent<ObjectState>();
             if (state != null)
             {
-                PhotonView targetView = GameObject.FindGameObjectsWithTag("Manager")[0].GetComponent<PhotonView>();
+                PhotonView targetView = GameObject.FindGameObjectWithTag("Manager").GetComponent<PhotonView>();
                 targetView.RPC("RelayOnTriggerRelease", PhotonTargets.All, objectIdx, state.GetObjectIndex());
             }
         }
         interactees.Clear();
+        photonView.RPC("UpdateChangeLinks", PhotonTargets.All, 0, false, true, false);
     }
 
     // Add to colliders anything the hand touches
@@ -140,27 +145,49 @@ public class Controller_State_Client : Photon.PunBehaviour {
     }
 
     // Removes a set of interactees from the controller
-    [PunRPC]
     public void RemoveInteractee(int ctrl, int[] objs)
     {
-        if (objectIdx == ctrl)
+        if (PhotonNetwork.isMasterClient)
         {
-            int i = 0;
-            int j = 0;
-            foreach (GameObject interactee in interactees)
+            Debug.Log("removing interactee!");
+            if (objectIdx == ctrl)
             {
-                if (objs[j] == i)
+                Debug.Log("ctrl: " + ctrl);
+                foreach (int obj in objs)
                 {
-                    toSeparate.Add(interactee);
-                    j++;
+                    Debug.Log("obj: " + obj);
+                    interactees.Remove(manager.GetThrowableObj(obj));
+                    photonView.RPC("UpdateChangeLinks", PhotonTargets.All, obj, true, false, true);
                 }
-                i++;
             }
         }
-        foreach (GameObject target in toSeparate)
+    }
+
+    // Updates the controller state across all other clients
+    [PunRPC]
+    public void UpdateChangeLinks(int index, bool remove, bool clear, bool force)
+    {
+        if (force || !photonView.isMine)
         {
-            interactees.Remove(target);
+            Debug.Log("UpdateChangeLinks: " + index);
+            GameObject obj = manager.GetThrowableObj(index);
+            if (remove)
+            {
+                interactees.Remove(obj);
+                Debug.Log("Interactee count: " + interactees.Count);
+                foreach(GameObject interactee in interactees)
+                {
+                    Debug.Log("Index: " + interactee.GetComponent<ObjectState>().GetObjectIndex());
+                }
+            }
+            else if (clear)
+            {
+                interactees.Clear();
+            }
+            else
+            {
+                interactees.Add(obj);
+            }
         }
-        toSeparate.Clear();
     }
 }

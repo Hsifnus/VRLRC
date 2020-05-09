@@ -61,6 +61,7 @@ public class ObjectState : Photon.PunBehaviour {
         objRigidbody.angularVelocity = new Vector3();
         objRigidbody.velocity = new Vector3();
         objectState = State.Passive;
+        CallUpdateObjectState(false);
         activators = new HashSet<GameObject>();
         interactors = new HashSet<GameObject>();
         wasEmpty = true;
@@ -70,8 +71,6 @@ public class ObjectState : Photon.PunBehaviour {
     // Add activator if object is touched by a player hand
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("OnTriggerEnter");
-        Debug.Log(other.gameObject.CompareTag("Hand"));
         if (other.gameObject.CompareTag("Hand"))
         {
             activators.Add(other.gameObject);
@@ -95,8 +94,6 @@ public class ObjectState : Photon.PunBehaviour {
     // Remove activator if object is no longer touched by a player hand
     private void OnTriggerExit(Collider other)
     {
-        Debug.Log("OnTriggerExit");
-        Debug.Log(other.gameObject.CompareTag("Hand"));
         if (other.gameObject.CompareTag("Hand"))
         {
             activators.Remove(other.gameObject);
@@ -127,14 +124,14 @@ public class ObjectState : Photon.PunBehaviour {
             photonView.RPC("UpdateChangeLinks", PhotonTargets.All, 
                 controller.GetComponent<Controller_State_Client>().GetObjectIndex(),
                 true, false);
-            Debug.Log("Interactor count: " + interactors.Count);
+            Debug.Log("Interactor count: " + interactors.Count + ", " + objectState);
         }
     }
 
     // Remove interactor if said interactor releases trigger
     public void OnTriggerRelease(GameObject controller)
     {
-        Debug.Log("OnTriggerRelease");
+        Debug.Log("OnTriggerRelease! " + controller.GetComponent<Controller_State_Client>().GetObjectIndex() + ", " + objectState);
         if (objectState != State.Passive)
         {
             interactors.Remove(controller);
@@ -169,13 +166,19 @@ public class ObjectState : Photon.PunBehaviour {
             respawnTimer -= Time.deltaTime;
             if (respawnTimer <= 0.0f)
             {
-                Respawn();
+                if (PhotonNetwork.isMasterClient)
+                {
+                    Respawn();
+                    objRigidbody.velocity = new Vector3();
+                }
                 respawnTimer = -1.0f;
-                objRigidbody.velocity = new Vector3();
             } else
             {
-                objRigidbody.velocity = new Vector3(objRigidbody.velocity.x, -sinkSpeed, objRigidbody.velocity.z);
-                gameObject.transform.position -= new Vector3(0, 0.1f, 0);
+                if (PhotonNetwork.isMasterClient)
+                {
+                    objRigidbody.velocity = new Vector3(objRigidbody.velocity.x, -sinkSpeed, objRigidbody.velocity.z);
+                    gameObject.transform.position -= new Vector3(0, 0.1f, 0);
+                }
             }
         }
         // 2. Update object color depending on current object state
@@ -234,7 +237,8 @@ public class ObjectState : Photon.PunBehaviour {
     {
         if (force || !PhotonNetwork.isMasterClient)
         {
-            objectState = (State) state;
+            if (!force || objectState != State.Interacting)
+                objectState = (State) state;
         }
     }
 

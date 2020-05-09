@@ -56,26 +56,28 @@ public class PlayerTeleport_Client : Photon.PunBehaviour, IPunCallbacks
     // Control fade-to-color effect based on current respawn timer
     void Update()
     {
-        if (respawnTime > 0.0f)
-        {
-            float lastRespawnTime = respawnTime;
-            respawnTime -= Time.deltaTime;
-            // Start fade effect 1.5s before respawn
-            if (lastRespawnTime >= 1.5f && respawnTime < 1.5f)
+        // Only run this update loop on the local player's client
+        if (photonView.isMine)
+            if (respawnTime > 0.0f)
             {
-                fade.OnStartFade(new Color(0.0f, 0.03f, 0.1f), 1.0f, false);
+                float lastRespawnTime = respawnTime;
+                respawnTime -= Time.deltaTime;
+                // Start fade effect 1.5s before respawn
+                if (lastRespawnTime >= 1.5f && respawnTime < 1.5f)
+                {
+                    fade.OnStartFade(new Color(0.0f, 0.03f, 0.1f), 1.0f, false);
+                }
+                // If timer expires...
+                if (respawnTime <= 0.0f)
+                {
+                    // ...respawn the player
+                    respawnTime = -1.0f;
+                    Respawn();
+                } else
+                {
+                    // ...otherwise, sink the player more
+                    playerRigidbody.velocity = new Vector3(playerRigidbody.velocity.x, -sinkSpeed, playerRigidbody.velocity.z);
+                }
             }
-            // If timer expires...
-            if (respawnTime <= 0.0f)
-            {
-                // ...respawn the player
-                respawnTime = -1.0f;
-                Respawn();
-            } else
-            {
-                // ...otherwise, sink the player more
-                playerRigidbody.velocity = new Vector3(playerRigidbody.velocity.x, -sinkSpeed, playerRigidbody.velocity.z);
-            }
-        }
     }
 }

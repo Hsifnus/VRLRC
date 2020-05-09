@@ -14,6 +14,8 @@ public class PlayerSync_Client : Photon.PunBehaviour, IPunCallbacks {
     public GameObject player_hand_left;
     public GameObject player_hand_right;
 
+    private float bindTimer = 1.0f;
+
     // Connect VR parts to script
     public override void OnPhotonInstantiate(PhotonMessageInfo info)
     {
@@ -25,6 +27,14 @@ public class PlayerSync_Client : Photon.PunBehaviour, IPunCallbacks {
 
     // Bind positions of player parts to SteamVR parts
     void FixedUpdate () {
+        bindTimer -= Time.deltaTime;
+        if (bindTimer < 0)
+        {
+            bindTimer = 1.0f;
+            vr_head = GameObject.FindGameObjectWithTag("MainCamera");
+            vr_controller_left = GameObject.FindGameObjectWithTag("BaseControllerLeft");
+            vr_controller_right = GameObject.FindGameObjectWithTag("BaseControllerRight");
+        }
         if (photonView.isMine)
         {
             if (vr_head) UpdatePosition(vr_head, player_head);

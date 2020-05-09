@@ -1,6 +1,27 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
+
+public class GameObjectComparer : IComparer
+{
+    public int Compare(object x, object y)
+    {
+        String nx = ((GameObject)x).name;
+        String ny = ((GameObject)y).name;
+        return nx.CompareTo(ny);
+    }
+}
+
+public class GameObjectPhotonComparer : IComparer
+{
+    public int Compare(object x, object y)
+    {
+        int nx = ((GameObject)x).GetComponent<PhotonView>().viewID;
+        int ny = ((GameObject)y).GetComponent<PhotonView>().viewID;
+        return nx.CompareTo(ny);
+    }
+}
 
 public class ObjectManager : Photon.PunBehaviour
 {
@@ -11,6 +32,10 @@ public class ObjectManager : Photon.PunBehaviour
     private Hashtable controllerIndexMap;
     private List<int>[] toSeparate;
     private string gameVersion = "0.1";
+    private GameObjectComparer comp;
+    private GameObjectPhotonComparer photonComp;
+    private Boolean resolvedControllers;
+    public float networked_force_factor;
 
     void Awake()
     {
@@ -20,6 +45,7 @@ public class ObjectManager : Photon.PunBehaviour
 
     void Start()
     {
+        resolvedControllers = false;
         if (!PhotonNetwork.connected)
         {
             PhotonNetwork.ConnectUsingSettings(gameVersion);
@@ -36,8 +62,14 @@ public class ObjectManager : Photon.PunBehaviour
     {
         Debug.Log("OnJoinedRoom");
 
-        PhotonNetwork.Instantiate("PlayerPrefab", new Vector3(1, 2, 2), Quaternion.identity, 0);
+        PhotonNetwork.Instantiate("PlayerPrefab", new Vector3(PhotonNetwork.player.ID, 2, 2), Quaternion.identity, 0);
+
+        comp = new GameObjectComparer();
+        photonComp = new GameObjectPhotonComparer();
+        RefreshControllers();
+        
         throwableObjs = GameObject.FindGameObjectsWithTag("Throwable");
+        Array.Sort(throwableObjs, comp);
         throwables = new ObjectState[throwableObjs.Length];
         int id = 10000;
         for (int i = 0; i < throwables.Length; i++)
@@ -47,23 +79,24 @@ public class ObjectManager : Photon.PunBehaviour
             PhotonTransformView ptv = throwableObjs[i].AddComponent<PhotonTransformView>();
             ptv.m_PositionModel.SynchronizeEnabled = true;
             ptv.m_RotationModel.SynchronizeEnabled = true;
-            pv.ObservedComponents = new List<Component>();
-            pv.ObservedComponents.Add(ptv);
+            ptv.m_PositionModel.InterpolateOption = PhotonTransformViewPositionModel.InterpolateOptions.Lerp;
+            ptv.m_PositionModel.InterpolateMoveTowardsAcceleration = 0.3f;
+            ptv.m_PositionModel.InterpolateMoveTowardsDeceleration = 0.3f;
+            ptv.m_PositionModel.InterpolateMoveTowardsSpeed = 1;
+            ptv.m_PositionModel.ExtrapolateOption = PhotonTransformViewPositionModel.ExtrapolateOptions.Disabled;
+            ptv.m_PositionModel.DrawErrorGizmo = true;
+            ptv.m_RotationModel.InterpolateOption = PhotonTransformViewRotationModel.InterpolateOptions.Lerp;
+            ptv.m_RotationModel.InterpolateLerpSpeed = 100;
+            PhotonRigidbodyView prv = throwableObjs[i].AddComponent<PhotonRigidbodyView>();
+            pv.ObservedComponents = new List<Component>
+            {
+                ptv, prv
+            };
             pv.viewID = id++;
+            pv.synchronization = ViewSynchronization.Unreliable;
             // Modify ObjectStates
             throwables[i] = throwableObjs[i].GetComponent<ObjectState>();
             throwables[i].SetObjectIndex(i);
-        }
-        
-        controllers = GameObject.FindGameObjectsWithTag("Hand");
-        controllerIndexMap = new Hashtable();
-        toSeparate = new List<int>[controllers.Length];
-        for (int i = 0; i < controllers.Length; i++)
-        {
-            Controller_State_Client client = controllers[i].GetComponent<Controller_State_Client>();
-            client.SetObjectIndex(i);
-            controllerIndexMap.Add(controllers[i], i);
-            toSeparate[i] = new List<int>();
         }
 
         if (PhotonNetwork.isMasterClient == false)
@@ -76,14 +109,45 @@ public class ObjectManager : Photon.PunBehaviour
 
     private void RefreshControllers()
     {
-        controllers = GameObject.FindGameObjectsWithTag("Hand");
+        Debug.Log("RefreshControllers");
+        List<GameObject> controllerList = new List<GameObject>();
+        foreach (PhotonPlayer player in PhotonNetwork.playerList)
+        {
+            int id = PhotonNetwork.MAX_VIEW_IDS * player.ID + 5;
+            if (PhotonView.Find(id) != null)
+            {
+                GameObject handObj = PhotonView.Find(id).gameObject;
+                controllerList.Add(handObj);
+                if (!player.IsMasterClient)
+                {
+                    handObj.GetComponent<PlayerForce>().force_factor = networked_force_factor;
+                }
+            }
+            if (PhotonView.Find(id + 1) != null)
+            {
+                GameObject handObj = PhotonView.Find(id + 1).gameObject;
+                controllerList.Add(PhotonView.Find(id + 1).gameObject);
+                if (!player.IsMasterClient)
+                {
+                    handObj.GetComponent<PlayerForce>().force_factor = networked_force_factor;
+                }
+            }
+        }
+        resolvedControllers = controllerList.Count == 2 * PhotonNetwork.playerList.Length;
+        if (!resolvedControllers)
+        {
+            return;
+        }
+        controllers = controllerList.ToArray();
+        Array.Sort(controllers, photonComp);
         controllerIndexMap = new Hashtable();
         toSeparate = new List<int>[controllers.Length];
         for (int i = 0; i < controllers.Length; i++)
         {
             Controller_State_Client client = controllers[i].GetComponent<Controller_State_Client>();
             PhotonView targetView = client.photonView;
-            targetView.RPC("SetObjectIndex", PhotonTargets.All, i);
+            if (PhotonNetwork.isMasterClient)
+                targetView.RPC("SetObjectIndex", PhotonTargets.All, i);
             controllerIndexMap.Add(controllers[i], i);
             toSeparate[i] = new List<int>();
         }
@@ -117,27 +181,35 @@ public class ObjectManager : Photon.PunBehaviour
     [PunRPC]
     void RelayOnTriggerPress(int ctrl, int obj)
     {
-        Debug.Log("RelayOnTriggerPress: " + ctrl + ", " + obj);
         if (PhotonNetwork.isMasterClient == false)
         {
             return;
         }
+        Debug.Log("RelayOnTriggerPress: " + ctrl + ", " + obj);
         throwables[obj].OnTriggerPress(controllers[ctrl]);
     }
 
     [PunRPC]
     void RelayOnTriggerRelease(int ctrl, int obj)
     {
-        Debug.Log("RelayOnTriggerRelease: " + ctrl + ", " + obj);
         if (PhotonNetwork.isMasterClient == false)
         {
             return;
         }
+        Debug.Log("RelayOnTriggerRelease: " + ctrl + ", " + obj);
         throwables[obj].OnTriggerRelease(controllers[ctrl]);
         PlayerForce force = GetPlayerForce(controllers[ctrl]);
         if (force != null)
         {
             force.ApplyThrowForce(throwableObjs[obj]);
+        }
+    }
+
+    void Update()
+    {
+        if (!resolvedControllers)
+        {
+            RefreshControllers();
         }
     }
 
@@ -153,23 +225,20 @@ public class ObjectManager : Photon.PunBehaviour
         {
             GameObject throwableObj = throwableObjs[i];
             ObjectState throwableState = throwables[i];
-            int j = 0;
             foreach (GameObject hand in throwableState.GetInteractors())
             {
                 if (!GetPlayerForce(hand).ApplyForce(throwableObj))
                 {
-                    toSeparate[(int) controllerIndexMap[hand]].Add(j);
+                    toSeparate[(int) controllerIndexMap[hand]].Add(throwableState.GetObjectIndex());
                 }
-                j++;
             }
             // 2. Release any interactees marked for separation
-            for (j = 0; j < toSeparate.Length; j++)
+            for (int j = 0; j < toSeparate.Length; j++)
             {
                 if (toSeparate[j].Count > 0)
                 {
-                    PhotonView targetView = controllers[j].GetComponent<PhotonView>();
                     int[] sepVals = toSeparate[j].ToArray();
-                    targetView.RPC("RemoveInteractee", PhotonTargets.All, j, sepVals);
+                    controllers[j].GetComponent<Controller_State_Client>().RemoveInteractee(j, sepVals);
                     for (int k = 0; k < sepVals.Length; k++)
                     {
                         throwables[sepVals[k]].OnTriggerRelease(controllers[j]);
@@ -183,6 +252,11 @@ public class ObjectManager : Photon.PunBehaviour
     public GameObject GetController(int index)
     {
         return controllers[index];
+    }
+
+    public GameObject GetThrowableObj(int index)
+    {
+        return throwableObjs[index];
     }
 
 }

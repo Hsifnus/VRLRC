@@ -15,18 +15,32 @@ public class Player_Controller_Client : Photon.PunBehaviour, IPunCallbacks {
     public event PlayerControllerEventHandler PlayerTriggerClicked;
     public event PlayerControllerEventHandler PlayerTriggerUnclicked;
 
+    private bool isLeft;
+
     // Initialize SteamVR controller and register interface callbacks into said controller
     override public void OnPhotonInstantiate(PhotonMessageInfo info)
     {
         Debug.Log("OnPhotonInstantiate 3");
-        bool isLeft = gameObject.GetComponent<PlayerLocomotion_Client>().isLeft;
-        controller = isLeft ? GameObject.FindGameObjectsWithTag("BaseControllerLeft")[0] : GameObject.FindGameObjectsWithTag("BaseControllerRight")[0];
+        isLeft = gameObject.GetComponent<PlayerLocomotion_Client>().isLeft;
+        controller = isLeft ? GameObject.FindGameObjectWithTag("BaseControllerLeft") : GameObject.FindGameObjectWithTag("BaseControllerRight");
+        if (controller) InitController();
+    }
+
+    private void InitController()
+    {
         _controller = controller.GetComponent<SteamVR_TrackedController>();
         if (photonView.isMine)
         {
-            Debug.Log("Is Mine!");
             _controller.TriggerClicked += HandleTriggerClicked;
             _controller.TriggerUnclicked += HandleTriggerUnclicked;
+        }
+    }
+
+    private void Update()
+    {
+        if (!controller) {
+            controller = isLeft ? GameObject.FindGameObjectWithTag("BaseControllerLeft") : GameObject.FindGameObjectWithTag("BaseControllerRight");
+            if (controller) InitController();
         }
     }
 
