@@ -22,6 +22,8 @@ public class Controller_State : MonoBehaviour {
     private Color farLinkColor = new Color(1.0f, 0.4f, 0.2f);
     // Was the link stretched last update? Used to prevent unneeded color updates
     private bool linkWasFar = false;
+    // Object manager index
+    private int objectIdx;
     
     // Colliders are objects that are currently colliding with this hand
     // Interactees are objects this hand is pulling
@@ -30,6 +32,7 @@ public class Controller_State : MonoBehaviour {
 
     // Initialize private parameters
     void Start () {
+        objectIdx = -1;
         _controller = controller.GetComponent<Player_Controller>();
         triggerHeld = false;
         triggerEntered = false;
@@ -147,4 +150,11 @@ public class Controller_State : MonoBehaviour {
             }
         }
     }
+    
+    // Sets the object index of the controller
+    public void SetObjectIndex(int idx)
+    {
+        objectIdx = idx;
+    }
+
 }
