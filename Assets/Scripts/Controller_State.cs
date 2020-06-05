@@ -57,6 +57,9 @@ public class Controller_State : MonoBehaviour {
             {
                 interactees.Add(obj);
                 state.OnTriggerPress(this.gameObject);
+            } else if (obj.CompareTag("Lever"))
+            {
+                interactees.Add(obj);
             }
         }
     }
@@ -129,6 +132,7 @@ public class Controller_State : MonoBehaviour {
         bool isFar = false;
         foreach (GameObject obj in interactees)
         {
+            Vector3 pos = obj.CompareTag("Lever") ? obj.GetComponent<LeverState>().GetHandlePos() : obj.transform.position;
             positions.Add(obj.transform.position);
             positions.Add(gameObject.transform.position);
             isFar = isFar || (obj.transform.position - gameObject.transform.position).magnitude >= 1.0f;

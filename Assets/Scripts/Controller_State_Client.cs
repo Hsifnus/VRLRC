@@ -54,7 +54,7 @@ public class Controller_State_Client : Photon.PunBehaviour {
         triggerHeld = true;
         foreach (GameObject obj in colliders)
         {
-            ObjectState state = obj.GetComponent<ObjectState>();
+            ObjectStateServer state = obj.GetComponent<ObjectStateServer>();
             if (state != null)
             {
                 interactees.Add(obj);
@@ -73,7 +73,7 @@ public class Controller_State_Client : Photon.PunBehaviour {
         PlayerForce force = GetComponent<PlayerForce>();
         foreach (GameObject obj in interactees)
         {
-            ObjectState state = obj.GetComponent<ObjectState>();
+            ObjectStateServer state = obj.GetComponent<ObjectStateServer>();
             if (state != null)
             {
                 PhotonView targetView = GameObject.FindGameObjectWithTag("Manager").GetComponent<PhotonView>();
@@ -177,7 +177,7 @@ public class Controller_State_Client : Photon.PunBehaviour {
                 Debug.Log("Interactee count: " + interactees.Count);
                 foreach(GameObject interactee in interactees)
                 {
-                    Debug.Log("Index: " + interactee.GetComponent<ObjectState>().GetObjectIndex());
+                    Debug.Log("Index: " + interactee.GetComponent<ObjectStateServer>().GetObjectIndex());
                 }
             }
             else if (clear)

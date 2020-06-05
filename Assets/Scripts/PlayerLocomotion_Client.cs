@@ -82,9 +82,9 @@ public class PlayerLocomotion_Client : Photon.PunBehaviour, IPunCallbacks {
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit, markerCollider.bounds.extents.y + 0.1f))
             {
-                ObjectState state = hit.collider.gameObject.GetComponent<ObjectState>();
+                ObjectStateServer state = hit.collider.gameObject.GetComponent<ObjectStateServer>();
                 // Cannot jump off of hands or objects we are pulling - prevents infinite jump exploit
-                if (!hit.collider.gameObject.CompareTag("Hand") && (!state || state.getState() != ObjectState.State.Interacting))
+                if (!hit.collider.gameObject.CompareTag("Hand") && (!state || state.getState() != ObjectStateServer.State.Interacting))
                 {
                     return true;
                 }
