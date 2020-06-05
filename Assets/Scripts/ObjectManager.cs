@@ -26,7 +26,7 @@ public class GameObjectPhotonComparer : IComparer
 public class ObjectManager : Photon.PunBehaviour
 {
     private GameObject[] throwableObjs;
-    private ObjectState[] throwables;
+    private ObjectStateServer[] throwables;
     private GameObject[] controllers;
     private Hashtable playerForceCache;
     private Hashtable controllerIndexMap;
@@ -55,7 +55,7 @@ public class ObjectManager : Photon.PunBehaviour
     public override void OnJoinedLobby()
     {
         Debug.Log("OnJoinedLobby");
-        PhotonNetwork.JoinOrCreateRoom("Room", new RoomOptions() { MaxPlayers = 2 }, TypedLobby.Default);
+        PhotonNetwork.JoinOrCreateRoom("Room", new RoomOptions() { MaxPlayers = 4 }, TypedLobby.Default);
     }
 
     public override void OnJoinedRoom()
@@ -70,7 +70,7 @@ public class ObjectManager : Photon.PunBehaviour
         
         throwableObjs = GameObject.FindGameObjectsWithTag("Throwable");
         Array.Sort(throwableObjs, comp);
-        throwables = new ObjectState[throwableObjs.Length];
+        throwables = new ObjectStateServer[throwableObjs.Length];
         int id = 10000;
         for (int i = 0; i < throwables.Length; i++)
         {
@@ -95,7 +95,7 @@ public class ObjectManager : Photon.PunBehaviour
             pv.viewID = id++;
             pv.synchronization = ViewSynchronization.Unreliable;
             // Modify ObjectStates
-            throwables[i] = throwableObjs[i].GetComponent<ObjectState>();
+            throwables[i] = throwableObjs[i].GetComponent<ObjectStateServer>();
             throwables[i].SetObjectIndex(i);
         }
 
@@ -224,7 +224,7 @@ public class ObjectManager : Photon.PunBehaviour
         for (int i = 0; i < throwables.Length; i++)
         {
             GameObject throwableObj = throwableObjs[i];
-            ObjectState throwableState = throwables[i];
+            ObjectStateServer throwableState = throwables[i];
             foreach (GameObject hand in throwableState.GetInteractors())
             {
                 if (!GetPlayerForce(hand).ApplyForce(throwableObj))
