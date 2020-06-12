@@ -46,19 +46,22 @@ public class PressurePlateState : MonoBehaviour
         }
     }
 
-    void OnTriggerEnter(Collider other)
+    private void OnCollisionEnter(Collision collision)
     {
+        Collider other = collision.collider;
         Rigidbody rigidbody = GetRigidbody(other);
-        if (rigidbody != null)
+        if ((collision.gameObject.CompareTag("Player") || collision.gameObject.CompareTag("Throwable")) && rigidbody != null)
         {
             weight += rigidbody.mass;
         }
+
     }
 
-    void OnTriggerExit(Collider other)
+    private void OnCollisionExit(Collision collision)
     {
+        Collider other = collision.collider;
         Rigidbody rigidbody = GetRigidbody(other);
-        if (rigidbody != null)
+        if ((collision.gameObject.CompareTag("Player") || collision.gameObject.CompareTag("Throwable")) && rigidbody != null)
         {
             weight -= rigidbody.mass;
         }

@@ -52,6 +52,10 @@ public class Controller_State : MonoBehaviour {
         triggerHeld = true;
         foreach (GameObject obj in colliders)
         {
+            if (obj.tag != null)
+            {
+                Debug.Log("tag: " + obj.tag);
+            }
             ObjectState state = obj.GetComponent<ObjectState>();
             if (state != null)
             {
@@ -59,6 +63,7 @@ public class Controller_State : MonoBehaviour {
                 state.OnTriggerPress(this.gameObject);
             } else if (obj.CompareTag("Lever"))
             {
+                Debug.Log("Added Lever");
                 interactees.Add(obj);
             }
         }
@@ -97,7 +102,10 @@ public class Controller_State : MonoBehaviour {
     private void OnTriggerExit(Collider other)
     {
         colliders.Remove(other.gameObject);
-        triggerEntered = false;
+        if (colliders.Count == 0)
+        {
+            triggerEntered = false;
+        }
     }
     
     private void LateUpdate()
@@ -108,9 +116,20 @@ public class Controller_State : MonoBehaviour {
         {
             foreach (GameObject obj in interactees)
             {
-                if(!force.ApplyForce(obj))
+                if (obj.CompareTag("Throwable"))
                 {
-                    toSeparate.Add(obj);
+                    if (!force.ApplyForce(obj))
+                    {
+                        toSeparate.Add(obj);
+                    }
+                } else if (obj.CompareTag("Lever"))
+                {
+                    Vector3 pull = gameObject.transform.position - obj.transform.position;
+                    if (pull.magnitude > force.separation_threshold)
+                    {
+                        toSeparate.Add(obj);
+                    }
+                    obj.GetComponent<LeverState>().UpdateActivation(gameObject.transform.position - obj.transform.position);
                 }
             }
         }
@@ -133,7 +152,7 @@ public class Controller_State : MonoBehaviour {
         foreach (GameObject obj in interactees)
         {
             Vector3 pos = obj.CompareTag("Lever") ? obj.GetComponent<LeverState>().GetHandlePos() : obj.transform.position;
-            positions.Add(obj.transform.position);
+            positions.Add(pos);
             positions.Add(gameObject.transform.position);
             isFar = isFar || (obj.transform.position - gameObject.transform.position).magnitude >= 1.0f;
         }
