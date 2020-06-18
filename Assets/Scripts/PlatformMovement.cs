@@ -34,6 +34,8 @@ public class PlatformMovement : MonoBehaviour
     // Whether this platform has collided with an obstruction en route to its destination
     private bool collided;
 
+    public bool startOnContact;
+
     // Initialize platform parameters
     void Start()
     {
@@ -50,6 +52,10 @@ public class PlatformMovement : MonoBehaviour
     // Run platform pause timer, determine when it is time to pause, and update displacements
     void Update()
     {
+        if (!CanMove())
+        {
+            return;
+        }
         if (pause > 0)
         {
             pause -= Time.deltaTime;
@@ -75,7 +81,7 @@ public class PlatformMovement : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         GameObject thing = collision.gameObject;
-        if (!collisionResponse || thing.CompareTag("Hand") || thing.CompareTag("Player")) 
+        if (!collisionResponse || thing.CompareTag("Hand") || thing.CompareTag("Player"))
         {
             return;
         }
@@ -84,5 +90,27 @@ public class PlatformMovement : MonoBehaviour
             return;
         }
         collided = true;
+    }
+
+    // Can the platform move?
+    private bool CanMove() {
+      if (startOnContact)
+      {
+        return false;
+      }
+      return true;
+    }
+
+    // Trigger the platform to move on contact with player if startOnContact is enabled
+    private void OnTriggerEnter(Collider collision)
+    {
+      GameObject player = collision.gameObject;
+      if (player.CompareTag("Player"))
+      {
+        if (startOnContact)
+        {
+            startOnContact = false;
+        }
+      }
     }
 }
