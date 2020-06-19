@@ -36,9 +36,13 @@ public class PlatformMovement : MonoBehaviour
 
     public bool startOnContact;
 
+    private string state;
+    public string initialState;
+
     // Initialize platform parameters
     void Start()
     {
+        state = initialState;
         position1 = pos1.transform.position;
         position2 = pos2.transform.position;
         transform.position = position1;
@@ -54,6 +58,7 @@ public class PlatformMovement : MonoBehaviour
     {
         if (!CanMove())
         {
+            platform.velocity = new Vector3();
             return;
         }
         if (pause > 0)
@@ -94,11 +99,7 @@ public class PlatformMovement : MonoBehaviour
 
     // Can the platform move?
     private bool CanMove() {
-      if (startOnContact)
-      {
-        return false;
-      }
-      return true;
+        return !(startOnContact || state == "off" || (goalpoint == position1 && state == "moveToPos2") || (goalpoint == position2 && state == "moveToPos1"));
     }
 
     // Trigger the platform to move on contact with player if startOnContact is enabled
@@ -112,5 +113,11 @@ public class PlatformMovement : MonoBehaviour
             startOnContact = false;
         }
       }
+    }
+
+    // Sets the state of the platform
+    public void SetState(string newState)
+    {
+        state = newState;
     }
 }

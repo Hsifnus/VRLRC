@@ -13,9 +13,11 @@ public class PressurePlateState : MonoBehaviour
     private float updateTime;
     private Hashtable rigidbodyCache;
     private BoxCollider boxCollider;
+    private PuzzleManager puzzleManager;
 
     void Start()
     {
+        puzzleManager = GameObject.Find("Puzzle Manager").GetComponent<PuzzleManager>();
         updateTime = updateInterval;
         activation = 0f;
         interpolatedActivation = 0f;
@@ -54,7 +56,6 @@ public class PressurePlateState : MonoBehaviour
         {
             weight += rigidbody.mass;
         }
-
     }
 
     private void OnCollisionExit(Collision collision)
@@ -73,6 +74,7 @@ public class PressurePlateState : MonoBehaviour
         if (updateTime < 0)
         {
             updateTime = updateInterval; // Update activation when timer expires and is renewed
+            float priorActivation = activation;
             if (weight < weightThreshold) // Activation floors at 0 if weight is below weightThreshold
             {
                 activation = 0f;
@@ -84,6 +86,10 @@ public class PressurePlateState : MonoBehaviour
             else // Activation caps at 1 if weight is above weightCapacity
             {
                 activation = 1f;
+            }
+            if (activation != priorActivation) // Request a puzzle manager update if activation changes during this tick
+            {
+                puzzleManager.RequestUpdate();
             }
         }
         // Update interpolated activation towards current activation
@@ -112,5 +118,11 @@ public class PressurePlateState : MonoBehaviour
         Vector3 colliderScale = boxCollider.size;
         colliderScale.y = 0.005f * scale.y;
         boxCollider.size = colliderScale;
+    }
+
+    // Gets current activation value
+    public float GetActivation()
+    {
+        return activation;
     }
 }
