@@ -13,13 +13,16 @@ public class LeverState : MonoBehaviour
     private Vector3 yBasis, zBasis;
     // The strongest pull strength allowed on the handle
     public float max_pull_strength = 10f;
+    // Global puzzle manager
+    PuzzleManager puzzleManager;
 
     // Obtain root lever object transform, initialize activation value, and create basis vectors
     void Start()
     {
+        puzzleManager = GameObject.Find("Puzzle Manager").GetComponent<PuzzleManager>();
         initialActivation = Mathf.Clamp(initialActivation, 0f, 1f);
         activation = initialActivation;
-        rootTransform = gameObject.transform.root.root.root;
+        rootTransform = gameObject.transform.parent.parent.parent;
         zBasis = rootTransform.rotation * new Vector3(0, 0, 1);
         yBasis = rootTransform.rotation * new Vector3(0, 1, 0);
     }
@@ -44,7 +47,12 @@ public class LeverState : MonoBehaviour
         Vector3 pullDir = new Vector3(0f, Vector3.Dot(yBasis, pull), Vector3.Dot(zBasis, pull));
         Vector3 handlePositiveDir = new Vector3(0f, Mathf.Sin(angle + Mathf.PI), Mathf.Cos(angle));
         float netPullStrength = Mathf.Clamp(Vector3.Dot(pullDir, handlePositiveDir), -max_pull_strength, max_pull_strength) / 100;
+        float priorActivation = activation;
         activation = Mathf.Clamp(activation + netPullStrength, 0f, 1f);
+        if (priorActivation != activation) // If activation changes, request a puzzle manager update
+        {
+            puzzleManager.RequestUpdate();
+        }
     }
 
     // Update handle position and rotation according to activation
@@ -54,6 +62,12 @@ public class LeverState : MonoBehaviour
         gameObject.transform.rotation = rootTransform.rotation * Quaternion.Euler(angle * 180 / Mathf.PI, 0, 0);
         Vector3 pos = gameObject.transform.position;
         Vector3 root = rootTransform.position;
-        gameObject.transform.position = new Vector3(pos.x, root.y + 0.01f * Mathf.Cos(angle), root.z + 0.01f * Mathf.Sin(angle));
+        gameObject.transform.position = root + 0.01f * Mathf.Cos(angle) * yBasis + 0.01f * Mathf.Sin(angle) * zBasis;
+    }
+
+    // Gets current activation value
+    public float GetActivation()
+    {
+        return activation;
     }
 }
