@@ -72,7 +72,7 @@ public class ObjectManager : Photon.PunBehaviour
         Array.Sort(throwableObjs, comp);
         throwables = new ObjectStateServer[throwableObjs.Length];
         int id = 10000;
-        for (int i = 0; i < throwables.Length; i++)
+        for (int i = 0; i < throwableObjs.Length; i++)
         {
             // Add PhotonTransformView
             PhotonView pv = throwableObjs[i].AddComponent<PhotonView>();
@@ -94,6 +94,7 @@ public class ObjectManager : Photon.PunBehaviour
             };
             pv.viewID = id++;
             pv.synchronization = ViewSynchronization.Unreliable;
+            Debug.Log(throwableObjs[i]);
             // Modify ObjectStates
             throwables[i] = throwableObjs[i].GetComponent<ObjectStateServer>();
             throwables[i].SetObjectIndex(i);
@@ -225,6 +226,8 @@ public class ObjectManager : Photon.PunBehaviour
         {
             GameObject throwableObj = throwableObjs[i];
             ObjectStateServer throwableState = throwables[i];
+            Debug.Log("throwableObj: " + throwableObj);
+            Debug.Log("throwableState: " + throwableState);
             foreach (GameObject hand in throwableState.GetInteractors())
             {
                 if (!GetPlayerForce(hand).ApplyForce(throwableObj))

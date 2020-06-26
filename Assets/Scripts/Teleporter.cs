@@ -10,11 +10,19 @@ public class Teleporter : MonoBehaviour
     public float cooldown;
 
     private string state;
-    public string initialState;
+    public string initialState = "on";
+    public float warpTime = 0.5f;
+    public SteamVR_Fade fade;
 
     void Start()
     {
         state = initialState;
+    }
+
+    private void WarpPlayer(GameObject player)
+    {
+        player.transform.SetPositionAndRotation(linkedTeleporter.transform.position, player.transform.rotation);
+        fade.OnStartFade(Color.clear, 0.5f, false);
     }
 
     // Carry player to linked teleport and allow them to leave on a cooldown
@@ -24,9 +32,17 @@ public class Teleporter : MonoBehaviour
       if (player.CompareTag("Player") && state != "off")
       {
         linkedTeleporter.GetComponent<Collider>().enabled = false;
-        player.transform.SetPositionAndRotation(linkedTeleporter.transform.position, player.transform.rotation);
-        Invoke("EnableTeleport", cooldown);
+        StartCoroutine(HandlePlayerTeleport(player));
       }
+    }
+
+    IEnumerator HandlePlayerTeleport(GameObject player)
+    {
+        fade.OnStartFade(new Color(1f, 1f, 1f), warpTime, false);
+        yield return new WaitForSeconds(warpTime);
+        WarpPlayer(player);
+        yield return new WaitForSeconds(cooldown);
+        EnableTeleport();
     }
 
     // Enables teleported back from the linked teleporter

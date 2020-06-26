@@ -42,6 +42,7 @@ public class PlayerTeleport : MonoBehaviour
         {
             // Mark player for respawning
             gameObject.transform.position -= new Vector3(0.0f, 0.1f, 0.0f);
+            fade.OnStartFade(new Color(0.0f, 0.03f, 0.1f), 1.0f, false);
             if (isRespawning == false)
             {
               isRespawning = true;

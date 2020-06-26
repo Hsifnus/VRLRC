@@ -1044,6 +1044,7 @@ MonoBehaviour:
   player_head: {fileID: 5957478767269021904}
   player_hand_left: {fileID: 5957478765791340939}
   player_hand_right: {fileID: 5957478766159367681}
+  objective_ui: {fileID: 0}
 --- !u!114 &4117607854397487497
 MonoBehaviour:
   m_ObjectHideFlags: 0
