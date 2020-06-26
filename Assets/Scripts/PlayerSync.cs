@@ -14,11 +14,17 @@ public class PlayerSync : MonoBehaviour {
     public GameObject player_hand_left;
     public GameObject player_hand_right;
 
+    // UIs that stick to the player
+    public GameObject objective_ui;
+
     // Bind positions of player parts to SteamVR parts
     void FixedUpdate () {
         UpdatePosition(vr_head, player_head);
         UpdatePosition(vr_controller_left, player_hand_left);
         UpdatePosition(vr_controller_right, player_hand_right);
+        // Update UI position to be in front of player camera
+        UpdatePosition(player_head, objective_ui);
+        objective_ui.transform.position += player_head.transform.rotation * new Vector3(0, -0.1f, 0.4f);
     }
 
     void UpdatePosition(GameObject source, GameObject target)

@@ -118,6 +118,7 @@ public class PlatformMovement : MonoBehaviour
     // Sets the state of the platform
     public void SetState(string newState)
     {
+        Debug.Log(newState);
         state = newState;
     }
 }
