@@ -26,6 +26,7 @@ public class PlayerSync_Client : Photon.PunBehaviour, IPunCallbacks {
         vr_controller_left = GameObject.FindGameObjectWithTag("BaseControllerLeft");
         vr_controller_right = GameObject.FindGameObjectWithTag("BaseControllerRight");
         vr_head = GameObject.FindGameObjectWithTag("MainCamera");
+        objective_ui = GameObject.FindGameObjectWithTag("ObjectiveUI");
     }
 
     // Bind positions of player parts to SteamVR parts

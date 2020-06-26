@@ -40,7 +40,6 @@ public class ObjectiveManager : MonoBehaviour
 
     private void ToggleActive(object sender, ClickedEventArgs e)
     {
-        Debug.Log("HIIIIIII!");
         active = !active;
     }
 
