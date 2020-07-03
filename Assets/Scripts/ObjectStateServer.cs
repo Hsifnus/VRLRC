@@ -242,7 +242,7 @@ public class ObjectStateServer : Photon.PunBehaviour {
         }
     }
 
-    // Updates the object state across all clients
+    // Updates the interactor state across all clients
     [PunRPC]
     public void UpdateChangeLinks(int index, bool interact, bool remove)
     {

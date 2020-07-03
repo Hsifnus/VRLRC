@@ -27,6 +27,8 @@ public class ObjectManager : Photon.PunBehaviour
 {
     private GameObject[] throwableObjs;
     private ObjectStateServer[] throwables;
+    private GameObject[] leverObjs;
+    private LeverState_Client[] levers;
     private GameObject[] controllers;
     private Hashtable playerForceCache;
     private Hashtable controllerIndexMap;
@@ -98,6 +100,16 @@ public class ObjectManager : Photon.PunBehaviour
             // Modify ObjectStates
             throwables[i] = throwableObjs[i].GetComponent<ObjectStateServer>();
             throwables[i].SetObjectIndex(i);
+        }
+
+        leverObjs = GameObject.FindGameObjectsWithTag("Lever");
+        Array.Sort(leverObjs, comp);
+        levers = new LeverState_Client[leverObjs.Length];
+        for (int i = 0; i < leverObjs.Length; i++)
+        {
+            // Modify LeverStates
+            levers[i] = leverObjs[i].GetComponent<LeverState_Client>();
+            levers[i].SetObjectIndex(throwableObjs.Length + i);
         }
 
         if (PhotonNetwork.isMasterClient == false)
@@ -221,33 +233,53 @@ public class ObjectManager : Photon.PunBehaviour
             return;
         }
 
-        // 1. Apply pull force to interactees
+        // 1. Apply pull force to throwable interactees
         for (int i = 0; i < throwables.Length; i++)
         {
             GameObject throwableObj = throwableObjs[i];
             ObjectStateServer throwableState = throwables[i];
-            Debug.Log("throwableObj: " + throwableObj);
-            Debug.Log("throwableState: " + throwableState);
             foreach (GameObject hand in throwableState.GetInteractors())
             {
                 if (!GetPlayerForce(hand).ApplyForce(throwableObj))
                 {
-                    toSeparate[(int) controllerIndexMap[hand]].Add(throwableState.GetObjectIndex());
+                    toSeparate[(int)controllerIndexMap[hand]].Add(throwableState.GetObjectIndex());
                 }
             }
-            // 2. Release any interactees marked for separation
-            for (int j = 0; j < toSeparate.Length; j++)
+        }
+        // 2. Apply pull force to lever interactees
+        for (int i = 0; i < levers.Length; i++)
+        {
+            GameObject leverObj = leverObjs[i];
+            LeverState_Client leverState = levers[i];
+            Vector3 leverPos = leverObj.transform.position;
+            foreach (GameObject hand in leverState.GetInteractors())
             {
-                if (toSeparate[j].Count > 0)
+                Vector3 pull = hand.transform.position - leverObj.transform.position;
+                if (pull.magnitude > GetPlayerForce(hand).separation_threshold)
                 {
-                    int[] sepVals = toSeparate[j].ToArray();
-                    controllers[j].GetComponent<Controller_State_Client>().RemoveInteractee(j, sepVals);
-                    for (int k = 0; k < sepVals.Length; k++)
+                    toSeparate[(int)controllerIndexMap[hand]].Add(leverState.GetObjectIndex());
+                }
+                leverObj.GetComponent<LeverState_Client>().UpdateActivation(hand.transform.position - leverPos);
+            }
+        }
+        // 3. Release any interactees marked for separation
+        for (int j = 0; j < toSeparate.Length; j++)
+        {
+            if (toSeparate[j].Count > 0)
+            {
+                int[] sepVals = toSeparate[j].ToArray();
+                controllers[j].GetComponent<Controller_State_Client>().RemoveInteractee(j, sepVals);
+                for (int k = 0; k < sepVals.Length; k++)
+                {
+                    if (sepVals[k] < throwableObjs.Length)
                     {
                         throwables[sepVals[k]].OnTriggerRelease(controllers[j]);
+                    } else
+                    {
+                        levers[sepVals[k] - throwableObjs.Length].ChangeInteractor(j, true, true);
                     }
-                    toSeparate[j].Clear();
                 }
+                toSeparate[j].Clear();
             }
         }
     }
@@ -259,7 +291,16 @@ public class ObjectManager : Photon.PunBehaviour
 
     public GameObject GetThrowableObj(int index)
     {
+        if (index >= throwableObjs.Length)
+        {
+            return GetLeverObj(index);
+        }
         return throwableObjs[index];
+    }
+
+    public GameObject GetLeverObj(int index)
+    {
+        return leverObjs[index - throwableObjs.Length];
     }
 
 }

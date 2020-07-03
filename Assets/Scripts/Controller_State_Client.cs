@@ -54,13 +54,25 @@ public class Controller_State_Client : Photon.PunBehaviour {
         triggerHeld = true;
         foreach (GameObject obj in colliders)
         {
-            ObjectStateServer state = obj.GetComponent<ObjectStateServer>();
-            if (state != null)
+            if (obj.CompareTag("Throwable"))
             {
-                interactees.Add(obj);
-                photonView.RPC("UpdateChangeLinks", PhotonTargets.All, state.GetObjectIndex(), false, false, false);
-                PhotonView targetView = GameObject.FindGameObjectsWithTag("Manager")[0].GetComponent<PhotonView>();
-                targetView.RPC("RelayOnTriggerPress", PhotonTargets.All, objectIdx, state.GetObjectIndex());
+                ObjectStateServer state = obj.GetComponent<ObjectStateServer>();
+                if (state != null)
+                {
+                    interactees.Add(obj);
+                    photonView.RPC("UpdateChangeLinks", PhotonTargets.All, state.GetObjectIndex(), false, false, false);
+                    PhotonView targetView = GameObject.FindGameObjectsWithTag("Manager")[0].GetComponent<PhotonView>();
+                    targetView.RPC("RelayOnTriggerPress", PhotonTargets.All, objectIdx, state.GetObjectIndex());
+                }
+            } else if (obj.CompareTag("Lever"))
+            {
+                LeverState_Client state = obj.GetComponent<LeverState_Client>();
+                if (state != null)
+                {
+                    interactees.Add(obj);
+                    photonView.RPC("UpdateChangeLinks", PhotonTargets.All, state.GetObjectIndex(), false, false, false);
+                    state.ChangeInteractor(objectIdx, false, false);
+                }
             }
         }
     }
@@ -73,11 +85,21 @@ public class Controller_State_Client : Photon.PunBehaviour {
         PlayerForce force = GetComponent<PlayerForce>();
         foreach (GameObject obj in interactees)
         {
-            ObjectStateServer state = obj.GetComponent<ObjectStateServer>();
-            if (state != null)
+            if (obj.CompareTag("Throwable"))
             {
-                PhotonView targetView = GameObject.FindGameObjectWithTag("Manager").GetComponent<PhotonView>();
-                targetView.RPC("RelayOnTriggerRelease", PhotonTargets.All, objectIdx, state.GetObjectIndex());
+                ObjectStateServer state = obj.GetComponent<ObjectStateServer>();
+                if (state != null)
+                {
+                    PhotonView targetView = GameObject.FindGameObjectWithTag("Manager").GetComponent<PhotonView>();
+                    targetView.RPC("RelayOnTriggerRelease", PhotonTargets.All, objectIdx, state.GetObjectIndex());
+                }
+            } else if (obj.CompareTag("Lever"))
+            {
+                LeverState_Client state = obj.GetComponent<LeverState_Client>();
+                if (state != null)
+                {
+                    state.ChangeInteractor(objectIdx, true, false);
+                }
             }
         }
         interactees.Clear();
@@ -108,7 +130,8 @@ public class Controller_State_Client : Photon.PunBehaviour {
         bool isFar = false;
         foreach (GameObject obj in interactees)
         {
-            positions.Add(obj.transform.position);
+            Vector3 pos = obj.CompareTag("Lever") ? obj.GetComponent<LeverState_Client>().GetHandlePos() : obj.transform.position;
+            positions.Add(pos);
             positions.Add(gameObject.transform.position);
             isFar = isFar || (obj.transform.position - gameObject.transform.position).magnitude >= 1.0f;
         }
