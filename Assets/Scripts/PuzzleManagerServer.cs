@@ -184,7 +184,7 @@ public class PuzzleManagerServer : Photon.PunBehaviour
         activatees = new Hashtable();
 
         dirty = true;
-        requestInterval = 0.1f;
+        requestInterval = 0.2f;
         requestTimer = -1f;
         deferRequest = false;
         // Add levers and pressure plates to activators
@@ -230,7 +230,7 @@ public class PuzzleManagerServer : Photon.PunBehaviour
         if (master && PhotonNetwork.isMasterClient)
         {
             dirty = true;
-        } else
+        } else if (!master)
         {
             if (requestTimer <= 0)
             {
@@ -238,7 +238,6 @@ public class PuzzleManagerServer : Photon.PunBehaviour
                 requestTimer = requestInterval;
             } else
             {
-                requestTimer = requestInterval;
                 deferRequest = true;
             }
         }

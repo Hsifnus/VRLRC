@@ -38,6 +38,7 @@ public class ObjectManager : Photon.PunBehaviour
     private GameObjectPhotonComparer photonComp;
     private Boolean resolvedControllers;
     public float networked_force_factor;
+    public GameObject[] playerLocations;
 
     void Awake()
     {
@@ -64,7 +65,8 @@ public class ObjectManager : Photon.PunBehaviour
     {
         Debug.Log("OnJoinedRoom");
 
-        PhotonNetwork.Instantiate("PlayerPrefab", new Vector3(PhotonNetwork.player.ID, 2, 2), Quaternion.identity, 0);
+        GameObject.Find("[CameraRig]").transform.SetPositionAndRotation(playerLocations[PhotonNetwork.player.ID-1].transform.position, Quaternion.identity);
+        PhotonNetwork.Instantiate("PlayerPrefab", playerLocations[PhotonNetwork.player.ID-1].transform.position, Quaternion.identity, 0);
 
         comp = new GameObjectComparer();
         photonComp = new GameObjectPhotonComparer();
@@ -252,15 +254,20 @@ public class ObjectManager : Photon.PunBehaviour
             GameObject leverObj = leverObjs[i];
             LeverState_Client leverState = levers[i];
             Vector3 leverPos = leverObj.transform.position;
+            Vector3 pull = new Vector3();
             foreach (GameObject hand in leverState.GetInteractors())
             {
-                Vector3 pull = hand.transform.position - leverObj.transform.position;
-                if (pull.magnitude > GetPlayerForce(hand).separation_threshold)
+                Vector3 currentPull = hand.transform.position - leverObj.transform.position;
+                if (currentPull.magnitude > GetPlayerForce(hand).separation_threshold)
                 {
                     toSeparate[(int)controllerIndexMap[hand]].Add(leverState.GetObjectIndex());
                 }
-                leverObj.GetComponent<LeverState_Client>().UpdateActivation(hand.transform.position - leverPos);
+                else
+                {
+                    pull += currentPull;
+                }
             }
+            leverObj.GetComponent<LeverState_Client>().UpdateActivation(pull);
         }
         // 3. Release any interactees marked for separation
         for (int j = 0; j < toSeparate.Length; j++)

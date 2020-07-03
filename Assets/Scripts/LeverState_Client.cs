@@ -57,10 +57,18 @@ public class LeverState_Client : Photon.PunBehaviour
         float netPullStrength = Mathf.Clamp(Vector3.Dot(pullDir, handlePositiveDir), -max_pull_strength, max_pull_strength) / 100;
         float priorActivation = activation;
         activation = Mathf.Clamp(activation + netPullStrength, 0f, 1f);
+        photonView.RPC("PropagateActivation", PhotonTargets.All, activation);
         if (priorActivation != activation) // If activation changes, request a puzzle manager update
         {
             puzzleManager.RequestUpdate(false);
         }
+    }
+
+    // Propagates activation value to all clients
+    [PunRPC]
+    public void PropagateActivation(float newActivation)
+    {
+        activation = newActivation;
     }
 
     // Update handle position and rotation according to activation
