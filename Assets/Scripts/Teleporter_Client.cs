@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 //Handles the teleportation of objects through the Teleporter
-public class Teleporter : MonoBehaviour
+public class Teleporter_Client : Photon.PunBehaviour
 {
     //Teleporter to teleport to
     public GameObject linkedTeleporter;
@@ -18,12 +18,12 @@ public class Teleporter : MonoBehaviour
     //Location of linked Teleporter
     Vector3 linkedPosition;
     //Teleporter script attatched to the linked Teleporter
-    Teleporter linkedScript;
+    Teleporter_Client linkedScript;
     //Teleportable objects which should not be teleported
     HashSet<string> teleportBlacklist;
-    //GameObject's material
+    //Game object's material
     Material material;
-    //Teleporter textures
+    //Teleporter's textures
     public Texture enabledTexture, disabledTexture;
 
     //Get linked Teleporter data and create blacklist
@@ -32,7 +32,7 @@ public class Teleporter : MonoBehaviour
         material = gameObject.GetComponent<Renderer>().material;
       state = initialState;
       linkedPosition = linkedTeleporter.transform.position;
-      linkedScript = linkedTeleporter.GetComponent<Teleporter>();
+      linkedScript = linkedTeleporter.GetComponent<Teleporter_Client>();
       teleportBlacklist = new HashSet<string>();
         if (state == "off")
         {
@@ -54,10 +54,10 @@ public class Teleporter : MonoBehaviour
       {
         //Adds object to linked teleporter blacklist so object does not instantly teleport back
         linkedScript.teleportBlacklist.Add(obj.name);
-        //Play fade effect if player is being teleported
-        if (obj.CompareTag("Player")) {
+        //Play fade effect if player being controlled by client is being teleported
+        if (obj.CompareTag("Player") && obj.GetPhotonView().isMine) {
           StartCoroutine(HandlePlayerTeleport(obj));
-        } else
+        } else if (obj.CompareTag("Throwable")) //Also teleport throwables
         {
           obj.transform.SetPositionAndRotation(linkedTeleporter.transform.position, obj.transform.rotation);
         }
@@ -90,10 +90,19 @@ public class Teleporter : MonoBehaviour
       return obj.CompareTag("Player") || obj.CompareTag("Throwable");
     }
 
-    //Set state of teleporter
-    public void SetState(string newState)
+    // Set state of the teleporter
+    [PunRPC]
+    public void SetState(string newState, bool master)
     {
-        state = newState;
+        if (master && PhotonNetwork.isMasterClient)
+        {
+            state = newState;
+            photonView.RPC("SetState", PhotonTargets.All, newState, false);
+        }
+        else if (!master && !PhotonNetwork.isMasterClient)
+        {
+            state = newState;
+        }
         if (state == "off")
         {
             material.SetTexture("_MainTex", disabledTexture);

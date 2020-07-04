@@ -49,4 +49,9 @@ MonoBehaviour:
   - SetObjectIndex
   - UpdateObjectState
   - UpdateChangeLinks
+  - SetWeight
+  - ChangeInteractor
+  - SetState
+  - RequestUpdate
+  - PropagateActivation
   DisableAutoOpenWizard: 1
