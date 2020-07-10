@@ -4,20 +4,34 @@ using UnityEngine;
 
 public class PressurePlateState_Client : Photon.PunBehaviour
 {
+    // The weight at which the pressure plate hits maximum activation.
     public float weightCapacity = 1f;
+    // The weight at which the pressure plate hits minimum activation.
     public float weightThreshold = 0f;
+    // How often the pressure plate updates activation.
+    // This helps prevent the plate from jittering due to blocks shifting around in position.
     public float updateInterval = 1f;
+    // The amount the pressure plate is pressed.
     private float activation;
+    // The displayed amount the pressure plate is pressed, which goes towards the actual activation value in a smoother, linear fashion.
     private float interpolatedActivation;
+    // The amount of weight currently present on the pressure plate.
     private float weight;
+    // Timer that shows how much time is left until the next activation update.
     private float updateTime;
+    // Flag that determines whether the weight has changed or not.
     private bool weightHasChanged;
+    // Rigidbody component cache that helps lessen GetComponent calls.
     private Hashtable rigidbodyCache;
+    // The pressure plate's collider, which has to adjust along with the squishing of the plate itself.
     private BoxCollider boxCollider;
+    // Reference to the scenes' puzzle manager, which gives a channel through which the pressure plate
+    // can affect puzzle logic in the scene.
     private PuzzleManagerServer puzzleManager;
 
     void Start()
     {
+        // Initialize pressure plate state variables and performance some sanity checks.
         puzzleManager = GameObject.Find("Puzzle Manager").GetComponent<PuzzleManagerServer>();
         updateTime = updateInterval;
         activation = 0f;
@@ -50,6 +64,7 @@ public class PressurePlateState_Client : Photon.PunBehaviour
         }
     }
 
+    // Add the object's weight to pressure plate if object connects.
     private void OnCollisionEnter(Collision collision)
     {
         Collider other = collision.collider;
@@ -60,6 +75,7 @@ public class PressurePlateState_Client : Photon.PunBehaviour
         }
     }
 
+    // Remove the object's weight from pressure plate if object no longer connects.
     private void OnCollisionExit(Collision collision)
     {
         Collider other = collision.collider;
@@ -70,6 +86,8 @@ public class PressurePlateState_Client : Photon.PunBehaviour
         }
     }
 
+    // Propagate weight across all clients by first updating weight on the master client
+    // before spreading that value to the other clients.
     [PunRPC]
     void SetWeight(float delta, bool master)
     {
@@ -83,6 +101,7 @@ public class PressurePlateState_Client : Photon.PunBehaviour
         }
     }
 
+    // Update the pressure plate's activation value depending on whether an update tick has been reached or not.
     private void UpdateActivation()
     {
         updateTime -= Time.deltaTime; // Tick down the update timer
@@ -123,6 +142,7 @@ public class PressurePlateState_Client : Photon.PunBehaviour
         }
     }
 
+    // Main update loop.
     void Update()
     {
         UpdateActivation();

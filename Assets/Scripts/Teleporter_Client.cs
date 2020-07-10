@@ -94,6 +94,7 @@ public class Teleporter_Client : Photon.PunBehaviour
     [PunRPC]
     public void SetState(string newState, bool master)
     {
+        // Change state to newState
         if (master && PhotonNetwork.isMasterClient)
         {
             state = newState;
@@ -103,6 +104,7 @@ public class Teleporter_Client : Photon.PunBehaviour
         {
             state = newState;
         }
+        // Change texture according to state.
         if (state == "off")
         {
             material.SetTexture("_MainTex", disabledTexture);

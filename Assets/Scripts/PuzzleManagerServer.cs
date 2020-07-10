@@ -142,6 +142,7 @@ public class PuzzleManagerServer : Photon.PunBehaviour
         }
     }
 
+    // Helper function that gathers a specific type of puzzle element together to a target and targetType map.
     private void GatherObjects(string alias, Hashtable target, Hashtable targetType, string type)
     {
         GameObject aliasObj = GameObject.Find(alias);
@@ -156,21 +157,28 @@ public class PuzzleManagerServer : Photon.PunBehaviour
         }
     }
 
+    // IMPORTANT: Activators are either pressure plates or levers.
+    // Activatees are either moving platforms or teleporters.
+
+    // Gets the activator puzzle element object with the given name.
     public GameObject GetActivator(string name)
     {
         return (GameObject) activators[name];
     }
 
+    // Gets the type of the activator puzzle element with the given name.
     public string GetActivatorType(string name)
     {
         return (string) activatorTypes[name];
     }
 
+    // Gets the activatee puzzle element object with the given name.
     public GameObject GetActivatee(string name)
     {
         return (GameObject) activatees[name];
     }
 
+    // Gets the type of the activatee puzzle element with the given name.
     public string GetActivateeType(string name)
     {
         return (string) activateeTypes[name];
@@ -183,7 +191,9 @@ public class PuzzleManagerServer : Photon.PunBehaviour
         activateeTypes = new Hashtable();
         activatees = new Hashtable();
 
+        // Set dirty to true to request an update upon initialization
         dirty = true;
+        // Set request interval values
         requestInterval = 0.2f;
         requestTimer = -1f;
         deferRequest = false;
@@ -224,20 +234,26 @@ public class PuzzleManagerServer : Photon.PunBehaviour
     }
 
     // Requests an update on the PuzzleManager
+    // Since puzzle element logic is handled on the master client only, dirty is only set to true for the master client in this function.
     [PunRPC]
     public void RequestUpdate(bool master)
     {
+        // Accept all requests sent to master
         if (master && PhotonNetwork.isMasterClient)
         {
             dirty = true;
         } else if (!master)
         {
+            // Otherwise, nonmaster requests produce a request to master
+            // every requestInterval seconds.
             if (requestTimer <= 0)
             {
                 photonView.RPC("RequestUpdate", PhotonTargets.All, true);
                 requestTimer = requestInterval;
             } else
             {
+                // If a request arrives before the requestTimer has run out, this tells us
+                // that a request is waiting to be accepted.
                 deferRequest = true;
             }
         }
@@ -245,16 +261,21 @@ public class PuzzleManagerServer : Photon.PunBehaviour
     
     void Update()
     {
+        // Tick down the request timer towards zero.
         if (requestTimer > 0)
         {
             requestTimer -= Time.deltaTime;
+            // When interval expires while a deferred request is waiting, we accept it and reset the request timer.
             if (requestTimer <= 0 && deferRequest)
             {
                 deferRequest = false;
                 requestTimer = requestInterval;
+                // Process deferred request.
                 photonView.RPC("RequestUpdate", PhotonTargets.All, true);
             }
         }
+        // If dirty flag is set to true, we check all puzzle conditions to see whether
+        // they are fulfilled or not and change puzzle element state accordingly.
         if (dirty)
         {
             for (int i = 0; i < puzzleConditions.Count; i++)

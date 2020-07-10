@@ -5,15 +5,26 @@ using Valve.VR.InteractionSystem;
 
 public class Controller_State_Offsite : MonoBehaviour {
 
+    // Is controller trigger being held?
     public bool triggerHeld;
+    // Is the hand touching another object?
     public bool triggerEntered;
+    // The game object containing the Player_Controller script
     public GameObject controller;
+    // The interface between the game and the SteamVR controller
     private Player_Controller_Offsite _controller;
+    // Renders object-hand links
     private LineRenderer lineRenderer;
+    // Color of non-stretched links
     private Color nearLinkColor;
+    // Color of stretched links
     private Color farLinkColor = new Color(1.0f, 0.4f, 0.2f);
+    // Was the link stretched last update? Used to prevent unneeded color updates
     private bool linkWasFar = false;
-
+    
+    // Colliders are objects that are currently colliding with this hand
+    // Interactees are objects this hand is pulling
+    // Objects that are too far from the hand are marked to be separated in current next update cycle
     HashSet<GameObject> colliders, interactees, toSeparate;
 
     // Use this for initialization
@@ -30,6 +41,7 @@ public class Controller_State_Offsite : MonoBehaviour {
         nearLinkColor = lineRenderer.material.color;
     }
 
+    // Callback used by Player_Controller to bind clicking the trigger to adding interactees
     private void HandleTriggerClicked(object sender, PlayerControllerEventArgs e)
     {
         Debug.Log("Trigger Clicked");
@@ -45,6 +57,7 @@ public class Controller_State_Offsite : MonoBehaviour {
         }
     }
 
+    // Callback used by Player_Controller to bind unclicking the trigger to removing interactees
     private void HandleTriggerUnclicked(object sender, PlayerControllerEventArgs e)
     {
         Debug.Log("Trigger Unclicked");
@@ -65,6 +78,7 @@ public class Controller_State_Offsite : MonoBehaviour {
         interactees.Clear();
     }
 
+    // Add to colliders anything the hand touches
     private void OnTriggerEnter(Collider other)
     {
         Debug.Log("triggerHeld: " + triggerHeld);
@@ -72,6 +86,7 @@ public class Controller_State_Offsite : MonoBehaviour {
         triggerEntered = true;
     }
 
+    // Remove from colliders anything the hand is no longer touching
     private void OnTriggerExit(Collider other)
     {
         colliders.Remove(other.gameObject);
@@ -80,17 +95,31 @@ public class Controller_State_Offsite : MonoBehaviour {
 
     private void LateUpdate()
     {
+        // 1. Apply pull force to interactees
         PlayerForce force = GetComponent<PlayerForce>();
         if (force != null)
         {
             foreach (GameObject obj in interactees)
             {
-                if(!force.ApplyForce(obj))
+                if (obj.CompareTag("Throwable"))
                 {
-                    toSeparate.Add(obj);
+                    if (!force.ApplyForce(obj))
+                    {
+                        toSeparate.Add(obj);
+                    }
+                }
+                else if (obj.CompareTag("Lever"))
+                {
+                    Vector3 pull = gameObject.transform.position - obj.transform.position;
+                    if (pull.magnitude > force.separation_threshold)
+                    {
+                        toSeparate.Add(obj);
+                    }
+                    obj.GetComponent<LeverState>().UpdateActivation(gameObject.transform.position - obj.transform.position);
                 }
             }
         }
+        // 2. Release any interactees marked for separation
         foreach (GameObject obj in toSeparate)
         {
             interactees.Remove(obj);
@@ -101,22 +130,20 @@ public class Controller_State_Offsite : MonoBehaviour {
             }
         }
         toSeparate.Clear();
+        // 3. Use interactee positions to compute object-hand link endpoints
         List<Vector3> positions = new List<Vector3>();
         positions.Add(gameObject.transform.position);
-        if (lineRenderer == null)
-        {
-            lineRenderer = GetComponent<LineRenderer>();
-            nearLinkColor = lineRenderer.material.color;
-        }
         lineRenderer.positionCount = 1 + 2 * interactees.Count;
         bool isFar = false;
         foreach (GameObject obj in interactees)
         {
-            positions.Add(obj.transform.position);
+            Vector3 pos = obj.CompareTag("Lever") ? obj.GetComponent<LeverState>().GetHandlePos() : obj.transform.position;
+            positions.Add(pos);
             positions.Add(gameObject.transform.position);
             isFar = isFar || (obj.transform.position - gameObject.transform.position).magnitude >= 1.0f;
         }
         lineRenderer.SetPositions(positions.ToArray());
+        // 4. Update link color depending on whether any one link is stretched or not
         if (isFar != linkWasFar)
         {
             linkWasFar = isFar;
