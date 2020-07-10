@@ -130,6 +130,7 @@ public class Controller_State_Client : Photon.PunBehaviour {
         bool isFar = false;
         foreach (GameObject obj in interactees)
         {
+            // If object being interacted is a lever, we use the lever handle position, which is not the transform position.
             Vector3 pos = obj.CompareTag("Lever") ? obj.GetComponent<LeverState_Client>().GetHandlePos() : obj.transform.position;
             positions.Add(pos);
             positions.Add(gameObject.transform.position);

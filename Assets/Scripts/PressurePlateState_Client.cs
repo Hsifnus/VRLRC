@@ -64,7 +64,7 @@ public class PressurePlateState_Client : Photon.PunBehaviour
         }
     }
 
-    // Add the object's weight to pressure plate if object no longer connects.
+    // Add the object's weight to pressure plate if object connects.
     private void OnCollisionEnter(Collision collision)
     {
         Collider other = collision.collider;

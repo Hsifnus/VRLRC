@@ -5,20 +5,32 @@ using UnityEngine.UI;
 
 public class ObjectiveManager_Client : MonoBehaviour
 {
+    // Level name text UI element
     public Text levelHeader;
+    // Level name text data
     public string levelHeaderText;
+    // Level objective text UI element
     public Text objective;
+    // Level objective text data
     public string objectiveText;
+    // Timer progress bar
     public Image timerProgress;
+    // Time remaining text UI element
     public Text timeRemaining;
+    // The maximum time allotted for a level, in seconds
     public float timeLimit;
+    // The current amount of time remaining, in seconds
     private float timer;
+    // Controllers whose button presses bring up the objective menu
     public GameObject controller1;
     public GameObject controller2;
     private SteamVR_TrackedController _controller1;
     private SteamVR_TrackedController _controller2;
+    // Component that groups all of the UI components together and allows for fading in and out
     private CanvasGroup canvasGroup;
+    // Current alpha of the objective menu UI
     private float alpha;
+    // Whether the UI should be active or not
     private bool active;
 
     // Initialize descriptions and timer
@@ -38,6 +50,7 @@ public class ObjectiveManager_Client : MonoBehaviour
         UpdateAlpha();
     }
 
+    // Invert the active value
     private void ToggleActive(object sender, ClickedEventArgs e)
     {
         active = !active;
