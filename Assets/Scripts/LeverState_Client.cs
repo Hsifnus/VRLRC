@@ -105,11 +105,14 @@ public class LeverState_Client : Photon.PunBehaviour
         return interactors;
     }
 
+    // Updates the lever's interactors list, for whenever a hand grabs or releases the lever.
+    // The "master" flag is used within the function to help propagate interactor state across all clients.
     [PunRPC]
     public void ChangeInteractor(int handIdx, bool remove, bool master)
     {
         if (master && PhotonNetwork.isMasterClient)
         {
+            // Only the master client stores interactor state, since interactors are only used by the object manager.
             if (remove)
             {
                 interactors.Remove(objectManager.GetController(handIdx));
