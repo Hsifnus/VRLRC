@@ -26,11 +26,13 @@ public class PlayerLocomotion_Offsite : MonoBehaviour
         new Vector3(0.075f, 0, -0.075f) };
     private float deltaX, deltaZ;
     public float stepSize = 0.05f;
+    private bool lastJumpInput;
 
     // Use this for initialization
     void Start()
     {
         Debug.Log("Starting!");
+        lastJumpInput = false;
         _controller = controller.GetComponent<SDK_InputSimulator>();
         Vector3 playerPos = player.transform.position;
         pivot.transform.position = new Vector3(playerPos.x, playerPos.y, playerPos.z);
@@ -84,11 +86,19 @@ public class PlayerLocomotion_Offsite : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(_controller.buttonOneAlias))
+        if (Input.GetKey(_controller.startMenuAlias))
+        {
+            pivot.GetComponent<PlayerTeleport>().Respawn();
+        }
+        // Handle jump input
+        bool jumpInput = Input.GetKey(_controller.buttonOneAlias);
+        if (jumpInput && jumpInput != lastJumpInput)
         {
             ClickedEventArgs dummy = new ClickedEventArgs();
             Jump(this, dummy);
         }
+        lastJumpInput = jumpInput;
+        // Handle walk input
         Valve.VR.VRControllerAxis_t padInput;
         padInput.x = Input.GetAxis("Horizontal") * 2;
         padInput.y = Input.GetAxis("Vertical") * 2;
@@ -113,7 +123,6 @@ public class PlayerLocomotion_Offsite : MonoBehaviour
             float inputX = speed * padMagnitude * Mathf.Cos((controlAzimuth - eyeAzimuth) / radiansToDegrees);
             float inputZ = speed * padMagnitude * Mathf.Sin((controlAzimuth - eyeAzimuth) / radiansToDegrees);
             markerBody.velocity = new Vector3(inputX, markerBody.velocity.y, inputZ);
-            Debug.Log("Marker Velocity: " + markerBody.velocity);
         }
         Vector3 pivotPos = pivot.transform.position;
         /** Not used in offsite demo
