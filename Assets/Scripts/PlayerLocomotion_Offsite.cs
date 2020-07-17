@@ -116,6 +116,7 @@ public class PlayerLocomotion_Offsite : MonoBehaviour
             Debug.Log("Marker Velocity: " + markerBody.velocity);
         }
         Vector3 pivotPos = pivot.transform.position;
+        /** Not used in offsite demo
         Vector3 headToPivot = new Vector3(head.transform.position.x - pivotPos.x, 0, head.transform.position.z - pivotPos.z);
         if (!moving && headToPivot.magnitude > 2 * stepSize && CanStep(headToPivot))
         {
@@ -123,7 +124,7 @@ public class PlayerLocomotion_Offsite : MonoBehaviour
             deltaX += step.x;
             deltaZ += step.z;
             pivot.transform.position += step;
-        }
+        } **/
         player.transform.position = new Vector3(pivotPos.x, pivotPos.y + 0.1f, pivotPos.z);
     }
 }

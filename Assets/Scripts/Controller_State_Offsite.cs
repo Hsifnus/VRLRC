@@ -54,6 +54,11 @@ public class Controller_State_Offsite : MonoBehaviour {
                 interactees.Add(obj);
                 state.OnTriggerPress(this.gameObject);
             }
+            else if (obj.CompareTag("Lever"))
+            {
+                Debug.Log("Added Lever");
+                interactees.Add(obj);
+            }
         }
     }
 

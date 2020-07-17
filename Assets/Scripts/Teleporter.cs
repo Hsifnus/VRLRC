@@ -79,8 +79,10 @@ public class Teleporter : MonoBehaviour
       //Start fade to white
       fade.OnStartFade(new Color(1f, 1f, 1f), warpTime, false);
       yield return new WaitForSeconds(warpTime);
-      //Clear fade and warp the player once warp time has elapsed
+        //Clear fade and warp the player once warp time has elapsed
+        Debug.Log(linkedTeleporter.transform.position);
       player.transform.SetPositionAndRotation(linkedTeleporter.transform.position, player.transform.rotation);
+        Debug.Log(player.transform.position);
       fade.OnStartFade(Color.clear, 0.5f, false);
     }
 
