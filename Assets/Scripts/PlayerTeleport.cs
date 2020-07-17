@@ -70,7 +70,7 @@ public class PlayerTeleport : MonoBehaviour
     }
 
     // Moves the player back to the spawn point instantly
-    void Respawn()
+    public void Respawn()
     {
         gameObject.transform.SetPositionAndRotation(spawnPosition, spawnRotation);
         fade.OnStartFade(Color.clear, 1.0f, false);
