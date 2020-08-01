@@ -33,6 +33,10 @@ public class ObjectState : MonoBehaviour
     // Activators are hands that are in contact with the object
     // Interactors are hands that are interacting with the object
     HashSet<GameObject> activators, interactors;
+    // Optional game object for this object to respawn on after sinking into water
+    public GameObject respawnTarget;
+    // Offset above respawn target at which this object respawns
+    public Vector3 respawnOffset = new Vector3();
 
     // Initialize private parameters
     void Start()
@@ -51,8 +55,15 @@ public class ObjectState : MonoBehaviour
     // Respawns the object at its spawn point, resetting internal state in the process
     private void Respawn()
     {
-        gameObject.transform.position = spawnLocation;
-        gameObject.transform.rotation = spawnRotation;
+        if (respawnTarget != null)
+        {
+            gameObject.transform.position = respawnTarget.transform.position + respawnOffset;
+            gameObject.transform.rotation = spawnRotation;
+        } else
+        {
+            gameObject.transform.position = spawnLocation;
+            gameObject.transform.rotation = spawnRotation;
+        }
         objRigidbody.angularVelocity = new Vector3();
         objRigidbody.velocity = new Vector3();
         objectState = State.Passive;

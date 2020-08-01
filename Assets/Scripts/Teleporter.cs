@@ -25,11 +25,20 @@ public class Teleporter : MonoBehaviour
     Material material;
     //Teleporter textures
     public Texture enabledTexture, disabledTexture;
+    //Objects that are on the teleporter while the teleporter is off
+    public List<GameObject> waitingObjects;
+    //Whether the teleporter accepts players or not
+    public bool acceptPlayers = true;
+    //Whether the teleporter accepts throwables or not
+    public bool acceptThrowables = true;
+    //Reset object orientation on teleport
+    public bool resetObjectOrientation = false;
 
     //Get linked Teleporter data and create blacklist
     void Start()
     {
         material = gameObject.GetComponent<Renderer>().material;
+        waitingObjects = new List<GameObject>();
       state = initialState;
       linkedPosition = linkedTeleporter.transform.position;
       linkedScript = linkedTeleporter.GetComponent<Teleporter>();
@@ -50,16 +59,13 @@ public class Teleporter : MonoBehaviour
     private void OnTriggerEnter(Collider collision)
     {
       GameObject obj = collision.gameObject;
-      if (IsTeleportable(obj) && !teleportBlacklist.Contains(obj.name) && state != "off")
+      if (IsTeleportable(obj) && !teleportBlacklist.Contains(obj.name))
       {
-        //Adds object to linked teleporter blacklist so object does not instantly teleport back
-        linkedScript.teleportBlacklist.Add(obj.name);
-        //Play fade effect if player is being teleported
-        if (obj.CompareTag("Player")) {
-          StartCoroutine(HandlePlayerTeleport(obj));
+        if (state == "on") {
+          HandleTeleport(obj);
         } else
         {
-          obj.transform.SetPositionAndRotation(linkedTeleporter.transform.position, obj.transform.rotation);
+          waitingObjects.Add(obj);
         }
       }
     }
@@ -68,10 +74,37 @@ public class Teleporter : MonoBehaviour
     private void OnTriggerExit(Collider collision)
     {
       GameObject obj = collision.gameObject;
-      if (IsTeleportable(obj) && teleportBlacklist.Contains(obj.name))
-      {
-        teleportBlacklist.Remove(obj.name);
-      }
+        if (IsTeleportable(obj) && teleportBlacklist.Contains(obj.name))
+        {
+            teleportBlacklist.Remove(obj.name);
+        }
+        else if (waitingObjects.Contains(obj))
+        {
+            waitingObjects.Remove(obj);
+        }
+    }
+
+    //Handles object teleportation
+    private void HandleTeleport(GameObject obj)
+    {
+        //Adds object to linked teleporter blacklist so object does not instantly teleport back
+        linkedScript.teleportBlacklist.Add(obj.name);
+        //Play fade effect if player is being teleported
+        if (obj.CompareTag("Player"))
+        {
+            StartCoroutine(HandlePlayerTeleport(obj));
+        }
+        else
+        {
+            obj.transform.SetPositionAndRotation(linkedTeleporter.transform.position, obj.transform.rotation);
+            if (resetObjectOrientation)
+            {
+                obj.transform.rotation = new Quaternion();
+                Rigidbody rigidbody = obj.GetComponent<Rigidbody>();
+                rigidbody.velocity = new Vector3();
+                rigidbody.angularVelocity = new Vector3();
+            }
+        }
     }
 
     IEnumerator HandlePlayerTeleport(GameObject player)
@@ -89,7 +122,7 @@ public class Teleporter : MonoBehaviour
     //Determines whether an object is of a teleportable type
     private bool IsTeleportable(GameObject obj)
     {
-      return obj.CompareTag("Player") || obj.CompareTag("Throwable");
+      return (obj.CompareTag("Player") && acceptPlayers) || (obj.CompareTag("Throwable") && acceptThrowables);
     }
 
     //Set state of teleporter
@@ -105,6 +138,11 @@ public class Teleporter : MonoBehaviour
         {
             material.SetTexture("_MainTex", enabledTexture);
             material.SetFloat("_InvFade", 3f);
+            foreach (GameObject obj in waitingObjects)
+            {
+                HandleTeleport(obj);
+            }
+            waitingObjects.Clear();
         }
     }
 }

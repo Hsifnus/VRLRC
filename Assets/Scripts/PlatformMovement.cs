@@ -118,7 +118,18 @@ public class PlatformMovement : MonoBehaviour
     // Sets the state of the platform
     public void SetState(string newState)
     {
-        Debug.Log(newState);
         state = newState;
+        if (state == "moveToPos1" && goalpoint != position1)
+        {
+            goalpoint = position1;
+            prevdisp = new Vector3();
+            pause = 0;
+        } else if (state == "moveToPos2" && goalpoint != position2)
+        {
+            goalpoint = position2;
+            prevdisp = new Vector3();
+            pause = 0;
+        }
+        Debug.Log("Platform of state " + state + " can move: " + CanMove());
     }
 }
