@@ -11,6 +11,10 @@ public class Controller_State_Offsite : MonoBehaviour {
     public bool triggerEntered;
     // The game object containing the Player_Controller script
     public GameObject controller;
+    // Player head, used to obtain the camera angle
+    public GameObject head;
+    // Strength of telekinetic throws
+    public float throwStrength;
     // The interface between the game and the SteamVR controller
     private Player_Controller_Offsite _controller;
     // Renders object-hand links
@@ -76,7 +80,9 @@ public class Controller_State_Offsite : MonoBehaviour {
                 state.OnTriggerRelease(this.gameObject);
                 if (force != null)
                 {
-                    force.ApplyThrowForce(obj);
+                    // throw objects in direction of camera
+                    Vector3 dir = head.transform.rotation * (new Vector3(0, 0, 1));
+                    force.ApplyThrowForceInDir(obj, dir, throwStrength);
                 }
             }
         }
@@ -136,6 +142,10 @@ public class Controller_State_Offsite : MonoBehaviour {
         }
         toSeparate.Clear();
         // 3. Use interactee positions to compute object-hand link endpoints
+        if (lineRenderer == null)
+        {
+            return;
+        }
         List<Vector3> positions = new List<Vector3>();
         positions.Add(gameObject.transform.position);
         lineRenderer.positionCount = 1 + 2 * interactees.Count;

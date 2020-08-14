@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Tip : MonoBehaviour
+public class Tip_Offsite : MonoBehaviour
 {
     // Question mark part of the question spot
     private GameObject questionMark;
     // Tip manager that we send text and description to for display
     private TipManager tipManager;
     // Objective manager that we turn off when a tip is activated
-    private ObjectiveManager objectiveManager;
+    private ObjectiveManager_Offsite objectiveManager;
     // Tip text and description
     public string tipText;
     public string tipDescription;
@@ -26,7 +26,7 @@ public class Tip : MonoBehaviour
         questionMark = transform.GetChild(0).gameObject;
         // Get managers
         tipManager = GameObject.Find("Tip UI").GetComponent<TipManager>();
-        objectiveManager = GameObject.Find("Objective UI").GetComponent<ObjectiveManager>();
+        objectiveManager = GameObject.Find("Objective UI").GetComponent<ObjectiveManager_Offsite>();
         visible = true;
         alpha = 1;
         materials = new Material[questionMark.transform.childCount];

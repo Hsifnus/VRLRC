@@ -67,4 +67,16 @@ public class PlayerForce : MonoBehaviour {
         }
     }
 
+    // Applies a sudden predefined force onto an object when player releases hold of said object
+    public void ApplyThrowForceInDir(GameObject obj, Vector3 dir, float magnitude)
+    {
+        Vector3 displacement = magnitude * dir.normalized;
+        Rigidbody rigidbody = obj.GetComponent<Rigidbody>();
+        // Is the object far enough away from the hand for the release to count as a throw?
+        if (displacement.magnitude > throw_threshold)
+        {
+            rigidbody.AddForce(throw_force_factor * displacement, ForceMode.Impulse);
+        }
+    }
+
 }
