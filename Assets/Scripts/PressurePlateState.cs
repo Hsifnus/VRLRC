@@ -28,6 +28,10 @@ public class PressurePlateState : MonoBehaviour
     // Reference to the scenes' puzzle manager, which gives a channel through which the pressure plate
     // can affect puzzle logic in the scene.
     private PuzzleManager puzzleManager;
+    // Optional progress bar that can be used to display the activation of the pressure plate more clearly.
+    public GameObject progressBar;
+    // Actual bar object
+    private GameObject _progressBar;
 
     void Start()
     {
@@ -45,6 +49,10 @@ public class PressurePlateState : MonoBehaviour
         if (weightCapacity < 0 || weightThreshold < 0)
         {
             throw new UnityException("Weight capacity or capacity cannot be negative!\nCurrent capacity: " + weightCapacity + "\nCurrent threshold: " + weightThreshold);
+        }
+        if (progressBar != null)
+        {
+            _progressBar = progressBar.transform.GetChild(4).gameObject;
         }
     }
 
@@ -136,6 +144,15 @@ public class PressurePlateState : MonoBehaviour
         Vector3 colliderScale = boxCollider.size;
         colliderScale.y = 0.005f * scale.y;
         boxCollider.size = colliderScale;
+        // Update progress bar appropriately if it exists
+        if (_progressBar != null)
+        {
+            float height = 0.05f + 0.5f * activation;
+            Transform transform = _progressBar.transform;
+            transform.localScale = new Vector3(transform.localScale.x, height, transform.localScale.z);
+            float offY = 0.25f * (activation - 1f);
+            transform.localPosition = new Vector3(transform.localPosition.x, offY, transform.localPosition.z);
+        }
     }
 
     // Gets current activation value

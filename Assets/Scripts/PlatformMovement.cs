@@ -68,7 +68,7 @@ public class PlatformMovement : MonoBehaviour
             return;
         }
         curdisp = transform.position - goalpoint;
-        if (Vector3.Dot(curdisp, prevdisp) < 0 || collided)
+        if (Vector3.Dot(curdisp, prevdisp) < 0 || curdisp == new Vector3() || collided)
         {
             pause = maxpause;
             platform.velocity = new Vector3();
@@ -130,6 +130,5 @@ public class PlatformMovement : MonoBehaviour
             prevdisp = new Vector3();
             pause = 0;
         }
-        Debug.Log("Platform of state " + state + " can move: " + CanMove());
     }
 }

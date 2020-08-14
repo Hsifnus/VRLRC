@@ -109,14 +109,20 @@ public class Teleporter : MonoBehaviour
 
     IEnumerator HandlePlayerTeleport(GameObject player)
     {
-      //Start fade to white
-      fade.OnStartFade(new Color(1f, 1f, 1f), warpTime, false);
+      if (fade != null)
+      {
+        //Start fade to white
+        fade.OnStartFade(new Color(1f, 1f, 1f), warpTime, false);
+      }
       yield return new WaitForSeconds(warpTime);
         //Clear fade and warp the player once warp time has elapsed
         Debug.Log(linkedTeleporter.transform.position);
       player.transform.SetPositionAndRotation(linkedTeleporter.transform.position, player.transform.rotation);
         Debug.Log(player.transform.position);
-      fade.OnStartFade(Color.clear, 0.5f, false);
+        if (fade != null)
+        {
+            fade.OnStartFade(Color.clear, 0.5f, false);
+        }
     }
 
     //Determines whether an object is of a teleportable type

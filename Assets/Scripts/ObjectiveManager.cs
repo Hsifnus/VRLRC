@@ -32,6 +32,8 @@ public class ObjectiveManager : MonoBehaviour
     private float alpha;
     // Whether the UI should be active or not
     private bool active;
+    // Tip manager that we tell to hide tips whenever we bring up the objective menu.
+    TipManager tipManager;
 
     // Initialize descriptions and timer
     void Start()
@@ -48,12 +50,23 @@ public class ObjectiveManager : MonoBehaviour
         alpha = 0f;
         active = false;
         UpdateAlpha();
+        tipManager = GameObject.Find("Tip UI").GetComponent<TipManager>();
+    }
+
+    // Deactivates if active
+    public void Deactivate()
+    {
+        active = false;
     }
 
     // Invert the active value
     private void ToggleActive(object sender, ClickedEventArgs e)
     {
         active = !active;
+        if (active)
+        {
+            tipManager.HideTip();
+        }
     }
 
     // Updates canvas alphas to smoothly fade in and out depending on activeness
