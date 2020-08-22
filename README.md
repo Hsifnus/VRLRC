@@ -16,7 +16,7 @@ The physics demo functions as it does thanks in part to the interactions between
 
 ### Puzzle Demo
 
-![Puzzle Demo](https://media.giphy.com/media/SwlrRFxQQYo4GTLNP0/giphy.gif)
+![Puzzle Demo](https://media3.giphy.com/media/l525adMJyie1sxkbSW/giphy.gif)
 
 The puzzle demo in particular utilizes additional, recently-developed scripts (also found in Assets/Scripts/) in order to implement and enforce bits of puzzle logic as shown below:
 * **Teleporter** contains the code controlling the logic of teleporters, which allow teleportation of players and objects between linked teleporters. Each teleporter can be in an "on" state or an "off" state.
